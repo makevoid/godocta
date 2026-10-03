@@ -1,0 +1,5 @@
+.godot/
+.DS_Store
+*.tmp
+captures/
+preview/

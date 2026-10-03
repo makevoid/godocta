@@ -1,0 +1,30 @@
+; Open this file in Godot 4.4 or newer.
+config_version=5
+
+[application]
+config/name="Octa · Structure Studio"
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.4", "GL Compatibility")
+config/icon="res://assets/octa.svg"
+
+[display]
+window/size/viewport_width=1500
+window/size/viewport_height=960
+window/size/window_width_override=1500
+window/size/window_height_override=960
+window/size/min_width=1100
+window/size/min_height=720
+window/stretch/mode="canvas_items"
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/default_filters/use_nearest_mipmap_filter=false
+anti_aliasing/quality/msaa_3d=2
+environment/defaults/default_clear_color=Color(0.039, 0.055, 0.065, 1)
+
+[environment]
+defaults/default_clear_color=Color(0.039, 0.055, 0.065, 1)
+
+[logging]
+file_logging/enable_file_logging=false
