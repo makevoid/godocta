@@ -303,7 +303,13 @@ func _test_editor() -> void:
 ## The Go generator's output (gen/, `go run ./cmd/octagen`) must load and be colored.
 func _test_generated_builds() -> void:
 	var codec := OctaFile.new()
-	for name in ["arena", "castle", "cruise_ship", "manhattan", "medieval_tower"]:
+	for name in [
+		"angkor_wat", "arena", "battleship", "castle", "cruise_ship", "eiffel_tower",
+		"floating_islands", "gothic_cathedral", "japanese_castle", "lighthouse_cove", "manhattan",
+		"medieval_tower", "meteora", "neuschwanstein", "piazza_dei_miracoli", "pirate_galleon",
+		"pont_du_gard", "prague_old_town", "santorini", "saturn_v_launch", "st_basils_cathedral",
+		"taj_mahal", "temple_of_heaven", "tower_bridge", "wild_west_town"
+	]:
 		var structure := codec.load_structure("res://structures/%s.octa" % name)
 		check(structure != null, "Generated %s loads: %s" % [name, codec.last_error])
 		if structure == null:

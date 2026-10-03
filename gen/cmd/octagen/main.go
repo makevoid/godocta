@@ -23,7 +23,7 @@ func main() {
 	flag.Parse()
 	if *list {
 		for _, s := range scenes.All() {
-			fmt.Printf("%-16s %s\n", s.Name(), s.Title())
+			fmt.Printf("%-22s %s\n", s.Name(), s.Title())
 		}
 		return
 	}
@@ -52,7 +52,7 @@ func main() {
 			continue
 		}
 		size := structure.Bounds().Size()
-		fmt.Printf("%-16s %7d cells  %5.1f × %4.1f × %5.1f units  %v\n",
+		fmt.Printf("%-22s %7d cells  %5.1f × %4.1f × %5.1f units  %v\n",
 			s.Name(), len(structure.Cells), size.X, size.Y, size.Z, time.Since(start).Round(time.Millisecond))
 	}
 	if failed {
