@@ -1,6 +1,8 @@
 // Package kit holds reusable architectural Components built from octa Solids.
 // Each component is a plain struct: set its fields, then grid.Build(component).
 // Dimensions are world units for cell span 1 (one cell ≈ one unit across).
+// Masonry uses the grid's current brush (grid.Use); accents such as roofs have their
+// own Color fields, where the zero value selects the component's default.
 package kit
 
 import (
@@ -88,7 +90,8 @@ type Tower struct {
 	Roof       Roof
 	RoofHeight float64 // For RoofCone. Default 1.8 × Radius.
 	Merlons    int
-	Windows    bool // Arrow slits on every storey, turning as they rise.
+	Windows    bool  // Arrow slits on every storey, turning as they rise.
+	RoofColor  Color // Default Slate; the finial is Gold.
 }
 
 func (t Tower) Build(g *Grid) {
@@ -111,8 +114,8 @@ func (t Tower) Build(g *Grid) {
 	g.Build(RingBattlements{Center: t.Center, Radius: rim, Top: t.Top, Count: t.Merlons})
 	if t.Roof == RoofCone {
 		height := or(t.RoofHeight, 1.8*t.Radius)
-		g.Fill(Cone(t.Center, rim-0.6, t.Top+0.5, height))
-		g.Fill(Cylinder{Center: t.Center, Radius: 0.75, Y0: t.Top + height, Y1: t.Top + height + 1.5})
+		g.With(t.RoofColor.Or(Slate), func() { g.Fill(Cone(t.Center, rim-0.6, t.Top+0.5, height)) })
+		g.With(Gold, func() { g.Fill(Cylinder{Center: t.Center, Radius: 0.75, Y0: t.Top + height, Y1: t.Top + height + 1.5}) })
 	}
 }
 
@@ -130,6 +133,7 @@ type Turret struct {
 	Base, Top  float64
 	RoofHeight float64 // Default 2.5 × Radius.
 	Cantilever float64
+	RoofColor  Color // Default Slate.
 }
 
 func (t Turret) Build(g *Grid) {
@@ -139,16 +143,17 @@ func (t Turret) Build(g *Grid) {
 	g.Fill(Cylinder{Center: t.Center, Radius: t.Radius, Y0: t.Base, Y1: t.Top})
 	g.Fill(Cylinder{Center: t.Center, Radius: t.Radius + 0.6, Y0: t.Top - 1, Y1: t.Top})
 	height := or(t.RoofHeight, 2.5*t.Radius)
-	g.Fill(Cone(t.Center, t.Radius+0.6, t.Top, height))
+	g.With(t.RoofColor.Or(Slate), func() { g.Fill(Cone(t.Center, t.Radius+0.6, t.Top, height)) })
 }
 
 // Keep is a rectangular great tower: storeys, windows, a door, battlements and
 // corner turrets that rise above the parapet.
 type Keep struct {
-	Min, Max Vec3
-	Storeys  int     // Default 3.
-	Door     Axis    // The door faces +Z (AxisZ) or +X (AxisX).
-	Turret   float64 // Corner turret radius; 0 for none.
+	Min, Max  Vec3
+	Storeys   int     // Default 3.
+	Door      Axis    // The door faces +Z (AxisZ) or +X (AxisX).
+	Turret    float64 // Corner turret radius; 0 for none.
+	RoofColor Color   // Turret roofs. Default Slate.
 }
 
 func (k Keep) Build(g *Grid) {
@@ -181,7 +186,7 @@ func (k Keep) Build(g *Grid) {
 	if k.Turret > 0 {
 		for _, x := range []float64{k.Min.X, k.Max.X} {
 			for _, z := range []float64{k.Min.Z, k.Max.Z} {
-				g.Build(Turret{Center: P(x, z), Radius: k.Turret, Base: k.Min.Y, Top: k.Max.Y + 5})
+				g.Build(Turret{Center: P(x, z), Radius: k.Turret, Base: k.Min.Y, Top: k.Max.Y + 5, RoofColor: k.RoofColor})
 			}
 		}
 	}
@@ -189,14 +194,17 @@ func (k Keep) Build(g *Grid) {
 
 // Hall is a hollow gabled building with a door at the +Z end.
 type Hall struct {
-	Min, Max Vec3 // Walls; the roof rises above Max.Y.
-	Ridge    Axis // Default AxisZ.
+	Min, Max  Vec3  // Walls; the roof rises above Max.Y.
+	Ridge     Axis  // Default AxisZ.
+	RoofColor Color // Default Terracotta.
 }
 
 func (h Hall) Build(g *Grid) {
 	g.Fill(Block(h.Min, h.Max))
 	g.Carve(Block(h.Min.Add(V(1.5, 0.5, 1.5)), h.Max.Sub(V(1.5, 1, 1.5))))
-	g.Fill(Gable{h.Min.Plan().Sub(P(0.5, 0.5)), h.Max.Plan().Add(P(0.5, 0.5)), h.Max.Y, h.Ridge})
+	g.With(h.RoofColor.Or(Terracotta), func() {
+		g.Fill(Gable{h.Min.Plan().Sub(P(0.5, 0.5)), h.Max.Plan().Add(P(0.5, 0.5)), h.Max.Y, h.Ridge})
+	})
 	center := h.Min.Add(h.Max).Scale(0.5)
 	if h.Ridge == AxisX {
 		g.Carve(Arch{V(h.Max.X, h.Min.Y, center.Z), 1.4, 3, 3, AxisX})
@@ -239,15 +247,22 @@ type Moat struct {
 	Center       Vec2
 	Bottom, Top  float64
 	Bridge       float64 // Bridge half-width; 0 for none.
+	Water        bool    // Paint the channel floor Water.
 }
 
 func (m Moat) Build(g *Grid) {
-	g.Carve(Func{Box{V(m.Center.X-m.Outer, m.Bottom, m.Center.Y-m.Outer), V(m.Center.X+m.Outer, m.Top, m.Center.Y+m.Outer)}, func(p Vec3) bool {
-		d := p.Plan().Sub(m.Center)
-		reach := math.Max(math.Abs(d.X), math.Abs(d.Y))
-		bridge := math.Abs(d.X) <= m.Bridge && d.Y > 0
-		return reach >= m.Inner && reach <= m.Outer && !bridge
-	}})
+	channel := func(bottom, top float64) Func {
+		return Func{Box{V(m.Center.X-m.Outer, bottom, m.Center.Y-m.Outer), V(m.Center.X+m.Outer, top, m.Center.Y+m.Outer)}, func(p Vec3) bool {
+			d := p.Plan().Sub(m.Center)
+			reach := math.Max(math.Abs(d.X), math.Abs(d.Y))
+			bridge := math.Abs(d.X) <= m.Bridge && d.Y > 0
+			return reach >= m.Inner && reach <= m.Outer && !bridge
+		}}
+	}
+	g.Carve(channel(m.Bottom, m.Top))
+	if m.Water {
+		g.Paint(Water, channel(m.Bottom-0.5, m.Bottom-0.5))
+	}
 }
 
 func or(v, fallback float64) float64 {

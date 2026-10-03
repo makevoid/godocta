@@ -16,12 +16,44 @@ type ComponentFunc func(g *Grid)
 
 func (f ComponentFunc) Build(g *Grid) { f(g) }
 
-// Grid is a mutable set of occupied lattice cells.
+// Grid is a mutable set of occupied, colored lattice cells. Fill operations paint with
+// the current brush (Stone until Use changes it).
 type Grid struct {
-	cells map[Cell]struct{}
+	cells map[Cell]Color
+	brush Color
 }
 
-func NewGrid() *Grid { return &Grid{cells: make(map[Cell]struct{})} }
+func NewGrid() *Grid { return &Grid{cells: make(map[Cell]Color)} }
+
+// Use sets the brush for subsequent fills.
+func (g *Grid) Use(c Color) *Grid { g.brush = c; return g }
+
+// Brush is the color subsequent fills use.
+func (g *Grid) Brush() Color { return g.brush }
+
+// With fills using a color, then restores the previous brush.
+func (g *Grid) With(c Color, fill func()) *Grid {
+	previous := g.brush
+	g.brush = c
+	fill()
+	g.brush = previous
+	return g
+}
+
+// ColorOf returns a cell's color and whether it is occupied.
+func (g *Grid) ColorOf(c Cell) (Color, bool) { color, ok := g.cells[c]; return color, ok }
+
+// Paint recolors occupied cells whose centers lie inside any of the solids.
+func (g *Grid) Paint(c Color, solids ...Solid) *Grid {
+	for _, s := range solids {
+		eachCell(s.Bounds(), func(cell Cell, p Vec3) {
+			if _, ok := g.cells[cell]; ok && s.Contains(p) {
+				g.cells[cell] = c
+			}
+		})
+	}
+	return g
+}
 
 func (g *Grid) Len() int           { return len(g.cells) }
 func (g *Grid) Has(c Cell) bool    { _, ok := g.cells[c]; return ok }
@@ -34,7 +66,7 @@ func (g *Grid) Add(c Cell) bool {
 	if !c.Valid() || g.Has(c) {
 		return false
 	}
-	g.cells[c] = struct{}{}
+	g.cells[c] = g.brush
 	return true
 }
 
@@ -43,7 +75,7 @@ func (g *Grid) Fill(solids ...Solid) *Grid {
 	for _, s := range solids {
 		eachCell(s.Bounds(), func(c Cell, p Vec3) {
 			if s.Contains(p) {
-				g.cells[c] = struct{}{}
+				g.cells[c] = g.brush
 			}
 		})
 	}
@@ -62,7 +94,7 @@ func (g *Grid) FillVolume(solids ...Solid) *Grid {
 				}
 			}
 			if inside*2 > len(volumeSamples) {
-				g.cells[c] = struct{}{}
+				g.cells[c] = g.brush
 			}
 		})
 	}
@@ -99,10 +131,10 @@ func (g *Grid) Build(components ...Component) *Grid {
 	return g
 }
 
-// Merge adds every cell of another grid.
+// Merge adds every cell of another grid, keeping its colors.
 func (g *Grid) Merge(o *Grid) *Grid {
-	for c := range o.cells {
-		g.cells[c] = struct{}{}
+	for c, color := range o.cells {
+		g.cells[c] = color
 	}
 	return g
 }
@@ -152,16 +184,17 @@ func Outward(center Vec2) Order {
 // Structure compiles the grid into an ordered, validated structure.
 func (g *Grid) Structure(title string, order Order) (*Structure, error) {
 	type ranked struct {
-		cell Cell
-		key  float64
+		cell  Cell
+		color Color
+		key   float64
 	}
 	cells := make([]ranked, 0, len(g.cells))
-	for c := range g.cells {
+	for c, color := range g.cells {
 		key := 0.0
 		if order != nil {
 			key = order(c)
 		}
-		cells = append(cells, ranked{c, key})
+		cells = append(cells, ranked{c, color, key})
 	}
 	sort.Slice(cells, func(i, j int) bool {
 		a, b := cells[i], cells[j]
@@ -176,9 +209,10 @@ func (g *Grid) Structure(title string, order Order) (*Structure, error) {
 		}
 		return a.cell.X < b.cell.X
 	})
-	s := &Structure{Title: title, Span: 1, Cells: make([]Cell, len(cells))}
+	s := &Structure{Title: title, Span: 1, Cells: make([]Cell, len(cells)), Colors: make([]Color, len(cells)), Palette: Palette[:]}
 	for i, r := range cells {
 		s.Cells[i] = r.cell
+		s.Colors[i] = r.color
 	}
 	if err := s.Validate(); err != nil {
 		return nil, fmt.Errorf("%s: %w", title, err)

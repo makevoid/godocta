@@ -55,7 +55,7 @@ func (s CruiseShip) Build() (*Grid, Order) {
 		}}
 	}
 	g := NewGrid()
-	g.FillVolume(hull(0, 0, D))
+	g.Use(White).FillVolume(hull(0, 0, D))
 	g.Carve(hull(1.2, 1.2, D-0.6))
 	// Internal decks, clipped to the hull.
 	for y := 4.0; y < D-1; y += 3 {
@@ -67,6 +67,9 @@ func (s CruiseShip) Build() (*Grid, Order) {
 		row := math.Mod(p.Y, 2.5) < 0.6
 		return row && math.Abs(p.Z) > w-0.6 && math.Mod(p.X+L, 2) < 0.6
 	}})
+	// Livery: red antifouling below the waterline, a navy hull band, white topsides.
+	g.Paint(Red, Block(V(-L/2, 0, -B/2), V(L/2, 1.5, B/2)))
+	g.Paint(Navy, Block(V(-L/2, 2, -B/2), V(L/2, 6, B/2)))
 	// Superstructure: seven decks, terraced aft and stepped back at the front.
 	const deck = 2.5
 	var top float64
@@ -90,6 +93,12 @@ func (s CruiseShip) Build() (*Grid, Order) {
 			g.Carve(Func{Box{V(aft+2, y0+0.5, -half), V(fore-2, y0+deck-0.5, half)}, func(p Vec3) bool {
 				return math.Abs(p.Z) > half-1 && math.Mod(p.X+L, 3) > 0.6
 			}})
+			// Glazed balcony doors at the back of each bay.
+			g.Paint(Glass, Func{Box{V(aft+2, y0+0.5, -half), V(fore-2, y0+deck-0.5, half)}, func(p Vec3) bool {
+				return math.Abs(p.Z) > half-1.6 && math.Abs(p.Z) <= half-1 && math.Mod(p.X+L, 3) > 0.6
+			}})
+		} else {
+			g.Paint(Glass, Block(V(aft, y0+1, -half), V(fore, y0+1.5, half)))
 		}
 		top = y0 + deck
 	}
@@ -97,19 +106,25 @@ func (s CruiseShip) Build() (*Grid, Order) {
 	foreTop := L/2 - 22 - 6*1.8
 	// Bridge with wings out to the full beam, and a radar mast.
 	g.Fill(Block(V(foreTop-4, bridgeY, -B/2-0.5), V(foreTop-1, bridgeY+deck, B/2+0.5)))
+	g.Paint(Charcoal, Block(V(foreTop-1, bridgeY+1, -B/2-0.5), V(foreTop-1, bridgeY+1.5, B/2+0.5)))
 	g.Fill(Cylinder{Center: P(foreTop-8, 0), Radius: 0.8, Y0: top, Y1: top + 7})
 	g.Fill(Block(V(foreTop-8.5, top+5, -3), V(foreTop-7.5, top+5.5, 3)))
-	// Pools on the top deck.
+	// Teak top deck with two pools.
+	g.Paint(Wood, Block(V(-L/2, top-0.5, -B/2), V(L/2, top-0.5, B/2)))
 	g.Carve(Block(V(-6, top-1, -4), V(6, top, 4)), Cylinder{Center: P(12, 0), Radius: 3, Y0: top - 1, Y1: top})
+	g.With(Water, func() {
+		g.Fill(Block(V(-6, top-1.5, -4), V(6, top-1.5, 4)), Cylinder{Center: P(12, 0), Radius: 3, Y0: top - 1.5, Y1: top - 1.5})
+	})
 	// Lifeboats hanging along the promenade.
 	for x := -L/2 + 18; x <= L/2-34; x += 6.5 {
 		for _, side := range []float64{-1, 1} {
-			g.Fill(Ellipsoid{V(x, D+deck+1.4, side*(B/2-1.2)), V(2.6, 1.0, 1.0)})
+			g.With(Gold, func() { g.Fill(Ellipsoid{V(x, D+deck+1.4, side*(B/2-1.2)), V(2.6, 1.0, 1.0)}) })
 		}
 	}
 	// Raked funnel with a hollow top.
 	funnel := Sheared{EllipticCylinder{P(-L/2+30, 0), 5, 2.8, top, top + 9}, P(-0.35, 0), top}
-	g.Fill(funnel)
+	g.Use(Red).Fill(funnel)
+	g.Paint(Charcoal, Sheared{EllipticCylinder{P(-L/2+30, 0), 5, 2.8, top + 7, top + 9}, P(-0.35, 0), top})
 	g.Carve(Sheared{EllipticCylinder{P(-L/2+30, 0), 3.8, 1.6, top + 7.5, top + 9}, P(-0.35, 0), top})
 	return g, Along(P(-1, 0))
 }

@@ -41,7 +41,7 @@ func _run() -> void:
 		if capture and shape == 0:
 			await _capture("cube-assembling")
 		await studio.renderer.assembly_finished
-		check(studio.renderer.timeline.elapsed == 4.0, "Assembly completes at four seconds")
+		check(studio.renderer.timeline.elapsed == studio.renderer.timeline.duration, "Assembly completes on schedule")
 		check(not studio.renderer.is_processing(), "No per-frame render updates after assembly")
 		check(studio.hud._state.text == "Assembly complete" and studio.hud._progress.value == 1.0, "HUD reflects completed assembly")
 		if capture:
@@ -56,6 +56,25 @@ func _run() -> void:
 	check(studio.renderer.timeline.elapsed == 0.0, "Repeated replay has one reset clock")
 	studio.renderer.set_gap(0.0)
 	check(is_zero_approx(studio.renderer.material_override.get_shader_parameter("cell_gap")), "Zero gap enables exact tiling")
+	# Presets are uncolored: the shader falls back to the base color.
+	check(studio.renderer.multimesh.buffer[15] == -1.0, "Uncolored cells use the base color")
+	# X-ray swaps the material and keeps shared parameters in sync.
+	studio.toggle_xray()
+	check(studio.renderer.xray and studio.hud._xray.button_pressed, "X-ray toggles on, HUD in sync")
+	check(is_zero_approx(studio.renderer.material_override.get_shader_parameter("cell_gap")), "X-ray shares parameters")
+	studio.toggle_xray()
+	check(not studio.renderer.xray, "X-ray toggles off")
+	# Generated builds load from the gallery with their palette.
+	var gallery := studio.hud.toolbar.gallery_paths
+	check(gallery.size() >= 5, "Builds gallery lists generated structures")
+	studio.hud.toolbar.gallery.get_popup().id_pressed.emit(gallery.find("res://structures/castle.octa"))
+	await process_frame
+	var castle := studio.renderer.structure
+	check(castle != null and castle.title == "Castle" and castle.is_colored(), "Castle loads with colors")
+	check(studio.renderer.timeline.duration > 4.0, "Large build takes longer to assemble")
+	var palette: PackedColorArray = studio.renderer.material_override.get_shader_parameter("palette")
+	check(palette.size() == 16 and palette[0].is_equal_approx(castle.palette[0].srgb_to_linear()), "Palette reaches the shader")
+	check(studio.renderer.multimesh.buffer[15] == float(castle.color_index(0)), "Color index stored per instance")
 	studio.renderer.display(OctaStructure.from_cells(PackedInt32Array()))
 	check(studio.renderer.multimesh.instance_count == 0 and not studio.renderer.is_processing(), "Empty file renders safely")
 	print("Scene integration: %s" % ("PASS" if failures == 0 else "FAIL"))

@@ -4,9 +4,13 @@ extends RefCounted
 ## The authoritative arrangement occupies 12 bytes per cell, excluding metadata.
 
 const MAX_CELLS: int = 200_000
+const MAX_PALETTE: int = 16
 var title: String = "Untitled"
 var cell_span: float = 1.0
+## Optional per-cell colors: indices into palette, parallel to the cells. Empty when uncolored.
+var palette: PackedColorArray = PackedColorArray()
 var _cells: PackedInt32Array = PackedInt32Array()
+var _colors: PackedByteArray = PackedByteArray()
 
 static func from_cells(cells: PackedInt32Array, structure_title: String = "Untitled", span: float = 1.0) -> OctaStructure:
 	if not validation_error(cells, span).is_empty():
@@ -32,6 +36,36 @@ static func validation_error(cells: PackedInt32Array, span: float) -> String:
 		seen[cell] = true
 	return ""
 
+static func color_error(cell_total: int, colors: PackedByteArray, colors_palette: PackedColorArray) -> String:
+	if colors_palette.size() > MAX_PALETTE:
+		return "A palette holds at most %d colors." % MAX_PALETTE
+	if colors.is_empty():
+		return ""
+	if colors.size() != cell_total:
+		return "Expected one color per cell."
+	for index in colors:
+		if index >= colors_palette.size():
+			return "Color index %d is outside the palette." % index
+	return ""
+
+## Attaches colors; returns an error message, or "" on success.
+func set_colors(colors: PackedByteArray, colors_palette: PackedColorArray) -> String:
+	var invalid := color_error(cell_count(), colors, colors_palette)
+	if invalid.is_empty():
+		_colors = colors.duplicate()
+		palette = colors_palette.duplicate()
+	return invalid
+
+func is_colored() -> bool:
+	return not _colors.is_empty()
+
+## Palette index of a cell, or -1 when the structure is uncolored.
+func color_index(index: int) -> int:
+	return _colors[index] if is_colored() else -1
+
+func packed_colors() -> PackedByteArray:
+	return _colors.duplicate()
+
 func cell_count() -> int:
 	return _cells.size() / 3
 
@@ -43,7 +77,7 @@ func packed_cells() -> PackedInt32Array:
 	return _cells.duplicate()
 
 func storage_bytes() -> int:
-	return _cells.size() * 4
+	return _cells.size() * 4 + _colors.size()
 
 func bounds() -> AABB:
 	if cell_count() == 0:

@@ -31,7 +31,7 @@ func display(data: OctaStructure, animate: bool = true) -> void:
 	instances.instance_count = data.cell_count()
 	var box := data.bounds()
 	# Big builds drop cells from proportionally higher so the motion stays visible.
-	_set_parameter("flight_scale", clampf(sqrt(box.get_longest_axis_size() / 10.0), 1.0, 3.5))
+	_set_parameter("flight_scale", clampf(pow(box.get_longest_axis_size() / 10.0, 0.25), 1.0, 2.0))
 	# Recenter for inspection while preserving original file coordinates.
 	position = Vector3(-box.get_center().x, -box.position.y + 0.06, -box.get_center().z)
 	var buffer := PackedFloat32Array()
@@ -48,9 +48,15 @@ func display(data: OctaStructure, animate: bool = true) -> void:
 		buffer[offset + 12] = float(index) / maxf(data.cell_count() - 1, 1.0)
 		buffer[offset + 13] = fposmod(float(index) * 0.61803398875, 1.0)
 		buffer[offset + 14] = (center.y - box.position.y) / maxf(box.size.y, 0.001)
-		buffer[offset + 15] = 1.0
+		buffer[offset + 15] = float(data.color_index(index))
 	instances.buffer = buffer
-	instances.custom_aabb = box.grow(data.cell_span * 9.0 * 3.5)
+	# File colors are sRGB; shading happens in linear space.
+	var palette := PackedColorArray()
+	for color in data.palette:
+		palette.append(color.srgb_to_linear())
+	palette.resize(OctaStructure.MAX_PALETTE)
+	_set_parameter("palette", palette)
+	instances.custom_aabb = box.grow(data.cell_span * 9.0 * 2.0)
 	multimesh = instances
 	if animate and data.cell_count() > 0:
 		replay()

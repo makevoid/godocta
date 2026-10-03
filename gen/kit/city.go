@@ -31,6 +31,8 @@ type Building struct {
 	Crown       Crown
 	CrownHeight float64
 	Floor       float64 // Floor slab spacing for hollow buildings. Default 4.
+	Windows     Color   // Glazing color for window bands between floors; 0 for none.
+	CrownColor  Color   // Default: the facade (current brush).
 }
 
 // Plain is a single-tier building.
@@ -49,6 +51,9 @@ func (b Building) Build(g *Grid) {
 		}
 		top := y + t.Height
 		g.Fill(Block(lo.At(y), hi.At(top)))
+		if b.Windows != 0 {
+			g.Paint(b.Windows, windowBands(lo, hi, y, top, floor))
+		}
 		if hi.X-lo.X >= 5 && hi.Y-lo.Y >= 5 {
 			for s := y + 0.5; s < top-1; s += floor {
 				g.Carve(Block(lo.Add(P(1, 1)).At(s), hi.Sub(P(1, 1)).At(math.Min(s+floor-1, top-1))))
@@ -58,6 +63,9 @@ func (b Building) Build(g *Grid) {
 	}
 	center := lo.Add(hi).Scale(0.5)
 	half := math.Min(hi.X-lo.X, hi.Y-lo.Y) / 2
+	previous := g.Brush()
+	defer g.Use(previous)
+	g.Use(b.CrownColor.Or(previous))
 	switch b.Crown {
 	case CrownPyramid:
 		g.Fill(HipRoof{lo, hi, y})
@@ -77,6 +85,16 @@ func (b Building) Build(g *Grid) {
 	}
 }
 
+// windowBands selects the outer skin between floor lines, leaving corner piers.
+func windowBands(lo, hi Vec2, y0, y1, floor float64) Solid {
+	return Func{Box{lo.At(y0), hi.At(y1)}, func(p Vec3) bool {
+		nearX := p.X <= lo.X+1 || p.X >= hi.X-1
+		nearZ := p.Z <= lo.Y+1 || p.Z >= hi.Y-1
+		band := math.Mod(p.Y-y0, floor) >= 1 && p.Y < y1-0.5
+		return band && nearX != nearZ
+	}}
+}
+
 // TwistTower is a square tower whose corners chamfer as it rises, ending as a square
 // rotated 45° (One World Trade Center-like), with a hollow core and a spire.
 type TwistTower struct {
@@ -84,6 +102,7 @@ type TwistTower struct {
 	Half        float64 // Half the base side.
 	Base, Top   float64
 	SpireHeight float64
+	Windows     Color // Glazing between floor lines; 0 for none.
 }
 
 func (t TwistTower) contains(inset float64) func(Vec3) bool {
@@ -98,6 +117,9 @@ func (t TwistTower) contains(inset float64) func(Vec3) bool {
 func (t TwistTower) Build(g *Grid) {
 	box := Box{V(t.Center.X-t.Half, t.Base, t.Center.Y-t.Half), V(t.Center.X+t.Half, t.Top, t.Center.Y+t.Half)}
 	g.Fill(Func{box, t.contains(0)})
+	if t.Windows != 0 {
+		g.Paint(t.Windows, Func{box, func(p Vec3) bool { return math.Mod(p.Y-t.Base, 4) >= 1 }})
+	}
 	for y := t.Base + 0.5; y < t.Top-1.5; y += 4 {
 		inner := box
 		inner.Min.Y, inner.Max.Y = y, y+3
@@ -128,8 +150,8 @@ type Tree struct {
 
 func (t Tree) Build(g *Grid) {
 	h := or(t.Height, 3)
-	g.Fill(Cylinder{Center: t.At, Radius: 0.6, Y0: t.Base, Y1: t.Base + h*0.5})
-	g.Fill(Ellipsoid{t.At.At(t.Base + h*0.7), V(h*0.35, h*0.3, h*0.35)})
+	g.With(Wood, func() { g.Fill(Cylinder{Center: t.At, Radius: 0.6, Y0: t.Base, Y1: t.Base + h*0.5}) })
+	g.With(Foliage, func() { g.Fill(Ellipsoid{t.At.At(t.Base + h*0.7), V(h*0.35, h*0.3, h*0.35)}) })
 }
 
 // SuspensionBridge spans between two plan points: a deck, two arched stone towers
@@ -150,7 +172,7 @@ func (s SuspensionBridge) Build(g *Grid) {
 	angle := dir.Angle()
 	at := func(t, offset float64) Vec2 { return s.From.Add(dir.Scale(t)).Add(side.Scale(offset)) }
 	deck := Block(V(0, s.Deck-0.5, -width/2), V(length, s.Deck, width/2))
-	g.Fill(Translate(RotateY(deck, P(0, 0), angle), s.From.At(0)))
+	g.With(Charcoal, func() { g.Fill(Translate(RotateY(deck, P(0, 0), angle), s.From.At(0))) })
 	towers := []float64{length * 0.22, length * 0.78}
 	for _, t := range towers {
 		c := at(t, 0)
@@ -177,7 +199,7 @@ func (s SuspensionBridge) Build(g *Grid) {
 			points = append(points, at(t, offset).At(y))
 		}
 		for i := 1; i < len(points); i++ {
-			g.Fill(Capsule{points[i-1], points[i], CellRadius})
+			g.With(Charcoal, func() { g.Fill(Capsule{points[i-1], points[i], CellRadius}) })
 		}
 	}
 }

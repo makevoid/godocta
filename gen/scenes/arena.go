@@ -85,12 +85,16 @@ func (a Arena) Build() (*Grid, Order) {
 		rise := local - 3.9
 		return fromArch <= 1.1 && (rise <= 0 || fromArch*fromArch+rise*rise <= 1.21) && local >= 0
 	}
+	seat := func(d float64) float64 { return 4 + math.Floor(d) }
 	g := NewGrid()
 	// Ground slab and a stepped podium around the outer ring.
+	g.Use(Grass)
 	g.Fill(field(func(p Vec3, d, _ float64) bool {
 		return p.Y <= 0.5 && d <= outer+2 || p.Y <= 1 && d >= outer && d <= outer+1.5
 	}))
-	// Outer wall: three arcaded storeys and an attic with small windows, cornice bands.
+	g.Paint(Sand, field(func(p Vec3, d, _ float64) bool { return d <= 1 }))
+	g.Use(Sand)
+	// Travertine outer wall: three arcaded storeys and an attic with small windows, cornice bands.
 	g.Fill(field(func(p Vec3, d, phi float64) bool {
 		if p.Y > outerTop || ruined(p, phi) {
 			return false
@@ -113,25 +117,16 @@ func (a Arena) Build() (*Grid, Order) {
 		}
 		return true
 	}))
+	g.Paint(Stone, field(func(p Vec3, d, _ float64) bool { return p.Y <= 1 && d >= outer }))
 	// Inner ring gallery: two arcaded storeys.
+	g.Use(Stone)
 	g.Fill(field(func(p Vec3, d, phi float64) bool {
 		return d >= 19.5 && d <= 20.5 && p.Y <= 2*storey && !arcade(p, d, phi, 2*storey)
 	}))
-	// Cavea: a stepped seating shell one unit thick, rising 1:1 from the podium wall.
-	seat := func(d float64) float64 { return 4 + math.Floor(d) }
-	g.Fill(field(func(p Vec3, d, phi float64) bool {
-		if d < 1 || d > outer-2.5 || ruined(p, phi) && d > outer-6 {
-			return false
-		}
-		h := seat(math.Min(d, 20))
-		if d > 20 { // Upper gallery floor behind the seats, level with the top row.
-			h = 2*storey + 0.5
-		}
-		return p.Y <= h && p.Y > h-1.5
-	}))
 	// Podium wall around the arena floor.
 	g.Fill(field(func(p Vec3, d, _ float64) bool { return d >= 0 && d <= 1 && p.Y <= 5 }))
-	// Radial walls carrying the cavea, aligned with every other pier.
+	// Brick radial walls carrying the cavea, aligned with every other pier.
+	g.Use(Brick)
 	g.Fill(field(func(p Vec3, d, phi float64) bool {
 		if d < 1 || d > outer-2.5 || p.Y < 0.5 || ruined(p, phi) && d > outer-6 {
 			return false
@@ -144,7 +139,20 @@ func (a Arena) Build() (*Grid, Order) {
 		}
 		return index%2 == 0 && fromPier <= 0.5 && p.Y <= limit
 	}))
-	// Hypogeum: parallel corridors under the arena; the floor covers only the west half.
+	// Marble cavea: a stepped seating shell one unit thick, rising 1:1 from the podium wall.
+	g.Use(White)
+	g.Fill(field(func(p Vec3, d, phi float64) bool {
+		if d < 1 || d > outer-2.5 || ruined(p, phi) && d > outer-6 {
+			return false
+		}
+		h := seat(math.Min(d, 20))
+		if d > 20 { // Upper gallery floor behind the seats, level with the top row.
+			h = 2*storey + 0.5
+		}
+		return p.Y <= h && p.Y > h-1.5
+	}))
+	// Hypogeum: brick corridors under the arena; a wooden floor covers only the west half.
+	g.Use(Brick)
 	g.Fill(field(func(p Vec3, d, _ float64) bool {
 		if d > 0 || p.Y < 0.5 {
 			return false
@@ -153,5 +161,6 @@ func (a Arena) Build() (*Grid, Order) {
 		deck := p.X < 0 && p.Y > 2.5 && p.Y <= 3.5
 		return walls || deck
 	}))
+	g.Paint(Wood, field(func(p Vec3, d, _ float64) bool { return d <= 0 && p.Y > 2.5 && p.Y <= 3.5 }))
 	return g, Sweep(P(0, 0), math.Pi/2)
 }

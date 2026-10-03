@@ -5,11 +5,31 @@ uniform float settle_time = 1.2;
 uniform float flight_scale = 1.0;
 uniform float cell_gap : hint_range(0.0, 0.25) = 0.045;
 uniform vec4 base_color : source_color = vec4(0.49, 0.76, 0.65, 1.0);
+// Up to 16 structure colors, already linear (array uniforms skip source_color conversion).
+// INSTANCE_CUSTOM.a picks one, or is negative for base_color.
+uniform vec4 palette[16];
 varying float height_tint;
 varying float arriving;
+varying vec4 paint; // rgb = cell color, a = 1 when it comes from the palette.
+
+vec4 paint_for(vec4 custom) {
+	if (custom.a < 0.0) {
+		return vec4(base_color.rgb, 0.0);
+	}
+	vec3 color = palette[clamp(int(custom.a + 0.5), 0, 15)].rgb;
+	// Filmic tonemapping boosts mid-tone saturation: pull back so file colors read true.
+	float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));
+	return vec4(mix(vec3(luma), color, 0.72), 1.0);
+}
+
+// Height shading: strong on the single-color look, subtle so palette colors stay true.
+vec3 shade(vec4 cell_paint, float tint, vec2 plain, vec2 painted) {
+	vec2 range = mix(plain, painted, cell_paint.a);
+	return cell_paint.rgb * mix(range.x, range.y, tint);
+}
 
 // Cells drop in on a spiral, scale up as they arrive and settle with cubic ease-out.
-// INSTANCE_CUSTOM: r = assembly rank, g = random seed, b = normalized height.
+// INSTANCE_CUSTOM: r = assembly rank, g = random seed, b = normalized height, a = color.
 // Outputs the height tint and arrival glow; callers store them in the varyings.
 void assemble(inout vec3 vertex, inout vec3 normal, vec4 custom, out float tint, out float glow) {
 	float delay = release_window * (1.0 - sqrt(1.0 - custom.r));

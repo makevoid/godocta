@@ -24,8 +24,13 @@ func (c Castle) Build() (*Grid, Order) {
 	wall, ground := orDefault(c.Wall, 25), orDefault(c.Ground, 2)
 	plinth := wall + 13
 	g := NewGrid()
-	g.Fill(Block(V(-plinth, 0, -plinth), V(plinth, ground-0.5, plinth)))
-	g.Build(kit.Moat{Inner: wall + 8.5, Outer: wall + 11.5, Bottom: 0.5, Top: ground, Bridge: 3})
+	// Earth platform: grass outside the walls, a sand courtyard inside, water in the moat.
+	g.Use(DarkStone).Fill(Block(V(-plinth, 0, -plinth), V(plinth, ground-0.5, plinth)))
+	g.Paint(Grass, Block(V(-plinth, ground-0.5, -plinth), V(plinth, ground-0.5, plinth)))
+	g.Paint(Sand, Block(V(-wall, ground-0.5, -wall), V(wall, ground-0.5, wall)))
+	g.Build(kit.Moat{Inner: wall + 8.5, Outer: wall + 11.5, Bottom: 0.5, Top: ground, Bridge: 3, Water: true})
+	g.Paint(Wood, Block(V(-3, ground-0.5, wall+8.5), V(3, ground-0.5, wall+11.5)))
+	g.Use(Stone)
 	for _, side := range []float64{-1, 1} {
 		g.Build(
 			kit.Wall{Min: V(-wall, ground, side*wall-2), Max: V(wall, ground+12, side*wall+2), Gallery: true},
@@ -42,12 +47,15 @@ func (c Castle) Build() (*Grid, Order) {
 	}
 	g.Build(
 		kit.Gatehouse{Center: P(0, wall+1), Base: ground, Top: ground + 15},
-		kit.Keep{Min: V(-10, ground, -14), Max: V(10, ground+24, 6), Turret: 2.8},
+		kit.Keep{Min: V(-10, ground, -14), Max: V(10, ground+24, 6), Turret: 2.8, RoofColor: Red},
 		kit.Hall{Min: V(-21, ground, -21), Max: V(-13, ground+7, -7)},
 		kit.Hall{Min: V(13, ground, -21), Max: V(21, ground+6, -9)},
 	)
 	// Courtyard well.
 	g.Fill(Cylinder{Center: P(12, 12), Radius: 1.8, Inner: 0.9, Y0: ground, Y1: ground + 1.5})
+	g.Paint(Water, Cylinder{Center: P(12, 12), Radius: 0.9, Y0: ground - 0.5, Y1: ground - 0.5})
+	// Wooden gate leaves closing the passage.
+	g.With(Wood, func() { g.Fill(Block(V(-2.5, ground, wall+5.5), V(2.5, ground+5, wall+5.5))) })
 	return g, Sweep(P(0, 0), math.Pi/2)
 }
 

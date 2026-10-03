@@ -17,11 +17,11 @@ static func duration_for(cell_count: int) -> float:
 	var scale := pow(maxf(cell_count, 1.0) / BASE_CELLS, 1.0 / 3.0)
 	return clampf(BASE_DURATION * scale, BASE_DURATION, MAX_DURATION)
 
-## Size the clock for a build. Each cell's flight lengthens gently with the build,
-## so large structures still read as individual cells landing.
+## Size the clock for a build. Each cell's flight lengthens only gently, so a large build
+## shows a crisp rising front rather than a cloud of thousands of cells in the air.
 func configure(cell_count: int) -> void:
 	duration = duration_for(cell_count)
-	settle_time = BASE_SETTLE * sqrt(duration / BASE_DURATION)
+	settle_time = BASE_SETTLE * pow(duration / BASE_DURATION, 0.25)
 	release_window = duration - settle_time
 	elapsed = duration
 

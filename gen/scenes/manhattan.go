@@ -26,7 +26,7 @@ var island = []Vec2{
 func (Manhattan) Build() (*Grid, Order) {
 	const ground = 1.0
 	g := NewGrid()
-	g.Fill(Prism{island, 0, ground - 0.5})
+	g.Use(Charcoal).Fill(Prism{island, 0, ground - 0.5}) // Asphalt: the streets.
 	park := Block(V(-9, ground, -56), V(6, ground, -24))
 	landmarks := []Box{
 		BoxOf(V(-4, 0, -12), V(4, 0, -4)),  // Empire State
@@ -65,8 +65,9 @@ func (Manhattan) Build() (*Grid, Order) {
 		}
 	}
 	// Central Park: lawn, reservoir and deterministic trees.
-	g.Fill(Block(V(-9, ground-0.5, -56), V(6, ground, -24)))
+	g.Use(Grass).Fill(Block(V(-9, ground-0.5, -56), V(6, ground, -24)))
 	g.Carve(EllipticCylinder{P(-1.5, -44), 4.5, 3.5, ground - 0.5, ground})
+	g.Paint(Water, EllipticCylinder{P(-1.5, -44), 4.5, 3.5, 0, ground - 1})
 	for i := 0; i < 60; i++ {
 		at := P(-8+Hash01(i, 1)*13, -55+Hash01(i, 2)*30)
 		if (at.X+1.5)*(at.X+1.5)/30+(at.Y+44)*(at.Y+44)/18 < 1 {
@@ -75,17 +76,16 @@ func (Manhattan) Build() (*Grid, Order) {
 		g.Build(kit.Tree{At: at, Base: ground, Height: 2.5 + Hash01(i, 3)*1.5})
 	}
 	// Landmarks.
-	g.Build(
-		kit.Building{Min: P(-4, -12), Max: P(4, -4), Base: ground, Crown: kit.CrownMast, CrownHeight: 12,
-			Tiers: []kit.Tier{{Height: 6}, {Height: 10, Inset: 1}, {Height: 26, Inset: 2}, {Height: 4, Inset: 2.5}}},
-		kit.Building{Min: P(5, -18), Max: P(11, -12), Base: ground, Crown: kit.CrownSpire, CrownHeight: 14,
-			Tiers: []kit.Tier{{Height: 8}, {Height: 26, Inset: 0.5}, {Height: 4, Inset: 1}}},
-		kit.TwistTower{Center: P(-6, 64), Half: 4, Base: ground, Top: ground + 50, SpireHeight: 12},
-		kit.Wedge{Corners: []Vec2{{-2, 24}, {6, 24}, {1, 16}}, Base: ground, Top: ground + 12},
-	)
+	g.Use(Sand).Build(kit.Building{Min: P(-4, -12), Max: P(4, -4), Base: ground, Crown: kit.CrownMast, CrownHeight: 12,
+		Windows: Glass, CrownColor: White,
+		Tiers: []kit.Tier{{Height: 6}, {Height: 10, Inset: 1}, {Height: 26, Inset: 2}, {Height: 4, Inset: 2.5}}})
+	g.Use(White).Build(kit.Building{Min: P(5, -18), Max: P(11, -12), Base: ground, Crown: kit.CrownSpire, CrownHeight: 14,
+		Windows: Glass, Tiers: []kit.Tier{{Height: 8}, {Height: 26, Inset: 0.5}, {Height: 4, Inset: 1}}})
+	g.Use(White).Build(kit.TwistTower{Center: P(-6, 64), Half: 4, Base: ground, Top: ground + 50, SpireHeight: 12, Windows: Glass})
+	g.Use(Sand).Build(kit.Wedge{Corners: []Vec2{{-2, 24}, {6, 24}, {1, 16}}, Base: ground, Top: ground + 12})
 	// Brooklyn Bridge out to a pier on the east, and Liberty Island to the south-west.
-	g.Fill(Block(V(42, 0, 60), V(50, ground-0.5, 72)))
-	g.Build(kit.SuspensionBridge{From: P(17, 66), To: P(43, 66), Deck: ground + 3, Width: 4, TowerHeight: 11})
+	g.Use(DarkStone).Fill(Block(V(42, 0, 60), V(50, ground-0.5, 72)))
+	g.Use(Sand).Build(kit.SuspensionBridge{From: P(17, 66), To: P(43, 66), Deck: ground + 3, Width: 4, TowerHeight: 11})
 	g.Build(liberty(P(-30, 92)))
 	return g, Outward(P(0, -8))
 }
@@ -97,32 +97,40 @@ func skyline(p Vec2) float64 {
 	return 3 + 26*midtown + 22*downtown
 }
 
+// Facades for ordinary lots: limestone, sandstone, brick, granite, concrete, dark glass.
+var facades = []Color{Stone, Sand, Brick, DarkStone, White, Charcoal}
+
 // cityBlock places one lot: a podium with setbacks, sized by the skyline and varied
-// deterministically per lot.
+// deterministically per lot. Taller lots get glazed window bands.
 func cityBlock(lo, hi Vec2, ground float64) Component {
 	center := lo.Add(hi).Scale(0.5)
 	seed := int(center.X*7) + int(center.Y*13)*31
 	height := math.Max(2, skyline(center)*(0.45+Hash01(seed)*0.9))
 	height = math.Round(height*2) / 2
 	b := kit.Building{Min: lo, Max: hi, Base: ground}
+	facade := facades[int(Hash01(seed, 5)*float64(len(facades)))]
+	if height > 9 {
+		b.Windows = Glass
+	}
 	switch {
 	case height > 18:
 		b.Tiers = []kit.Tier{{Height: height * 0.3}, {Height: height * 0.5, Inset: 0.5}, {Height: height * 0.2, Inset: 1}}
 		if Hash01(seed, 9) > 0.7 {
-			b.Crown = kit.CrownPyramid
+			b.Crown, b.CrownColor = kit.CrownPyramid, Glass // Copper-green patina.
 		}
 	case height > 9:
 		b.Tiers = []kit.Tier{{Height: height * 0.6}, {Height: height * 0.4, Inset: 0.5}}
 	default:
 		b.Tiers = []kit.Tier{{Height: height}}
 	}
-	return b
+	return ComponentFunc(func(g *Grid) { g.With(facade, func() { g.Build(b) }) })
 }
 
 // liberty is a star-fort island with a pedestal and a stylised statue.
 func liberty(at Vec2) Component {
 	return ComponentFunc(func(g *Grid) {
-		g.Fill(EllipticCylinder{at, 7, 5, 0, 0.5})
+		g.Use(Grass).Fill(EllipticCylinder{at, 7, 5, 0, 0.5})
+		g.Use(Stone)
 		var star []Vec2
 		for k := 0; k < 22; k++ {
 			r := 4.5
@@ -132,9 +140,9 @@ func liberty(at Vec2) Component {
 			star = append(star, Polar(at, r, float64(k)*2*math.Pi/22))
 		}
 		g.Fill(Prism{star, 1, 2})
-		g.Fill(Frustum{at, 2, 1.5, 2, 6})
-		g.Fill(Frustum{at, 1.2, 0.7, 6, 11}, Sphere(at.At(11.5), 0.9))
+		g.Use(Sand).Fill(Frustum{at, 2, 1.5, 2, 6})
+		g.Use(Glass).Fill(Frustum{at, 1.2, 0.7, 6, 11}, Sphere(at.At(11.5), 0.9)) // Verdigris copper.
 		g.Fill(Capsule{at.Add(P(0.6, 0)).At(10), at.Add(P(1, 0)).At(14), CellRadius})
-		g.Fill(Sphere(at.Add(P(1, 0)).At(14.6), 0.8))
+		g.Use(Gold).Fill(Sphere(at.Add(P(1, 0)).At(14.6), 0.8))
 	})
 }
