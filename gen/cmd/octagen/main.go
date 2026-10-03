@@ -1,8 +1,9 @@
-// Command octagen writes scene structures as OCTA v1 files for the studio.
+// Command octagen writes scene structures as OCTA files for the studio.
 //
 //	go run ./cmd/octagen -list
 //	go run ./cmd/octagen                 # every scene into ../structures
 //	go run ./cmd/octagen -out dir castle arena
+//	go run ./cmd/octagen -density 8     # twice the linear resolution
 package main
 
 import (
@@ -18,6 +19,7 @@ import (
 func main() {
 	out := flag.String("out", "../structures", "output directory")
 	list := flag.Bool("list", false, "list scenes and exit")
+	density := flag.Float64("density", scenes.DefaultDensity, "cells per span-1 cell: 2 doubles the cell count, 8 doubles the linear resolution")
 	flag.Parse()
 	if *list {
 		for _, s := range scenes.All() {
@@ -40,7 +42,7 @@ func main() {
 	failed := false
 	for _, s := range selected {
 		start := time.Now()
-		structure, err := scenes.Compile(s)
+		structure, err := scenes.Compile(s, *density)
 		if err == nil {
 			err = structure.WriteFile(filepath.Join(*out, s.Name()+".octa"))
 		}

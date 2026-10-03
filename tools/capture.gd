@@ -5,6 +5,7 @@ extends SceneTree
 ##   --views=hero,front,side,top   Camera angles for the finished build. Default: hero,front,top.
 ##   --modes=solid,xray            Render modes. Default: solid.
 ##   --at=0.25,0.6                 Also capture mid-assembly at these fractions (hero view).
+##   --bench                       Also print average CPU/GPU render time per frame (hero view).
 ##   --gap=0.045 --out=captures
 
 const VIEWS := {
@@ -53,6 +54,9 @@ func _run() -> void:
 				_set_view("hero")
 				await _capture("%s-build-%02d%s" % [name, roundi(float(stage) * 100), suffix])
 			studio.renderer.seek(1.0)
+			if options.has("bench"):
+				_set_view("hero")
+				await _bench(name + suffix)
 			for view in views:
 				if not VIEWS.has(view):
 					push_warning("Unknown view: " + view)
@@ -60,6 +64,24 @@ func _run() -> void:
 				_set_view(view)
 				await _capture("%s-%s%s" % [name, view, suffix])
 	quit(0)
+
+## Hidden windows are throttled, so FPS is meaningless here, and the Compatibility
+## renderer doesn't report GPU time. Instead, force-draw frames and read pixels back,
+## which waits for the GPU; the readback itself costs a few ms (compare with the cube).
+func _bench(name: String) -> void:
+	# Wait for the background surface pass so the settled view is measured.
+	var deadline := Time.get_ticks_msec() + 20000
+	while studio.renderer.surface_multimesh == null and Time.get_ticks_msec() < deadline:
+		await process_frame
+	for i in 3:
+		await RenderingServer.frame_post_draw
+	const FRAMES := 20
+	var start := Time.get_ticks_usec()
+	for i in FRAMES:
+		RenderingServer.force_draw(false)
+		root.get_texture().get_image()
+	var ms := (Time.get_ticks_usec() - start) / 1000.0 / FRAMES
+	print("Bench %s: %.1f ms per frame (≈ %d FPS), %d cells, %d drawn" % [name, ms, roundi(1000.0 / ms), studio.renderer.structure.cell_count(), studio.renderer.drawn_count()])
 
 func _show(name: String) -> bool:
 	var preset := Array(StructurePresets.TITLES).map(func(t: String) -> String: return t.to_lower()).find(name)
@@ -74,8 +96,9 @@ func _show(name: String) -> bool:
 
 func _set_view(view: String) -> void:
 	studio.camera.reset_view()
-	studio.camera.yaw = VIEWS[view].x
-	studio.camera.pitch = VIEWS[view].y
+	if view != "hero": # The hero view is the studio's own default framing.
+		studio.camera.yaw = VIEWS[view].x
+		studio.camera.pitch = VIEWS[view].y
 	studio.camera._update_transform()
 
 func _capture(name: String) -> void:

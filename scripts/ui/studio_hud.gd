@@ -17,6 +17,8 @@ var _time: Label
 var _toast: Label
 var _toast_remaining: float = 0.0
 var _xray: CheckButton
+var _fps: Label
+var _fps_elapsed: float = 0.0
 
 func _ready() -> void:
 	var root := Control.new()
@@ -39,15 +41,20 @@ func _ready() -> void:
 	root.add_child(_toast)
 
 func _build_info(root: Control) -> void:
+	# A translucent card keeps the text readable over bright skies and terrain.
+	var card := PanelContainer.new()
+	card.position = Vector2(18, 122)
+	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.add_theme_stylebox_override("panel", StudioTheme.panel(Color(0.04, 0.06, 0.07, 0.72), Color(1, 1, 1, 0.06), 14))
+	root.add_child(card)
 	var info := VBoxContainer.new()
-	info.position = Vector2(34, 138)
 	info.add_theme_constant_override("separation", 10)
 	info.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(info)
+	card.add_child(info)
 	_number = StudioTheme.label("01 / PRIMITIVE", 12, StudioTheme.ACCENT)
 	info.add_child(_number)
 	_title = StudioTheme.label("Cube", 52)
-	_title.custom_minimum_size.x = 260
+	_title.custom_minimum_size.x = 300
 	_title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	info.add_child(_title)
 	_subtitle = StudioTheme.label("10 × 10 × 10 units", 16, StudioTheme.MUTED)
@@ -98,13 +105,16 @@ func _build_unit_card(root: Control) -> void:
 	column.add_child(StudioTheme.label("6 squares  +  8 hexagons", 13, StudioTheme.MUTED))
 
 func _build_view_controls(root: Control) -> void:
+	var card := PanelContainer.new()
+	card.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	card.offset_left = -250
+	card.offset_right = -18
+	card.offset_top = 112
+	card.add_theme_stylebox_override("panel", StudioTheme.panel(Color(0.04, 0.06, 0.07, 0.72), Color(1, 1, 1, 0.06), 14))
+	root.add_child(card)
 	var box := VBoxContainer.new()
-	box.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	box.offset_left = -234
-	box.offset_right = -34
-	box.offset_top = 124
 	box.add_theme_constant_override("separation", 12)
-	root.add_child(box)
+	card.add_child(box)
 	var reset := StudioTheme.button("Reset view   F", 190)
 	reset.pressed.connect(func() -> void: reset_view_requested.emit())
 	box.add_child(reset)
@@ -126,6 +136,14 @@ func _build_view_controls(root: Control) -> void:
 	gap.tooltip_text = "Visual spacing only. Set to zero for exact face-to-face tiling."
 	gap.value_changed.connect(func(value: float) -> void: gap_changed.emit(value))
 	box.add_child(gap)
+	var performance := HBoxContainer.new()
+	performance.add_theme_constant_override("separation", 8)
+	performance.add_child(StudioTheme.label("RENDER", 10, StudioTheme.MUTED))
+	_fps = StudioTheme.label("— FPS", 13, StudioTheme.ACCENT)
+	_fps.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_fps.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	performance.add_child(_fps)
+	box.add_child(performance)
 
 func _build_footer(root: Control) -> void:
 	var footer := PanelContainer.new()
@@ -172,6 +190,12 @@ func _build_footer(root: Control) -> void:
 
 func show_structure(structure: OctaStructure, preset: int = -1) -> void:
 	_title.text = structure.title
+	# Shrink long titles to fit the card instead of truncating them.
+	var font := _title.get_theme_font("font")
+	var font_size := 52
+	while font_size > 28 and font.get_string_size(structure.title, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x > 300:
+		font_size -= 2
+	_title.add_theme_font_size_override("font_size", font_size)
 	_number.text = "%02d / PRIMITIVE" % (preset + 1) if preset >= 0 else "FILE / STRUCTURE"
 	var size := structure.bounds().size
 	_subtitle.text = StructurePresets.DESCRIPTIONS[preset] if preset >= 0 \
@@ -193,6 +217,11 @@ func notify(message: String) -> void:
 	_toast_remaining = 5.0
 
 func _process(delta: float) -> void:
+	_fps_elapsed += delta
+	if _fps_elapsed >= 0.5:
+		_fps_elapsed = 0.0
+		var fps := Engine.get_frames_per_second()
+		_fps.text = "%d FPS   ·   %.1f ms" % [fps, 1000.0 / maxf(fps, 1.0)]
 	if _toast_remaining > 0.0:
 		_toast_remaining -= delta
 		if _toast_remaining <= 0.0:

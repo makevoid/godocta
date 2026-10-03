@@ -48,7 +48,7 @@ func (a Arena) bay(d, phi float64) (fromArch, fromPier float64) {
 	return
 }
 
-func (a Arena) Build() (*Grid, Order) {
+func (a Arena) Build(g *Grid) Order {
 	if a.A == 0 {
 		a.A, a.B = 21, 13
 	}
@@ -86,7 +86,6 @@ func (a Arena) Build() (*Grid, Order) {
 		return fromArch <= 1.1 && (rise <= 0 || fromArch*fromArch+rise*rise <= 1.21) && local >= 0
 	}
 	seat := func(d float64) float64 { return 4 + math.Floor(d) }
-	g := NewGrid()
 	// Ground slab and a stepped podium around the outer ring.
 	g.Use(Grass)
 	g.Fill(field(func(p Vec3, d, _ float64) bool {
@@ -162,5 +161,5 @@ func (a Arena) Build() (*Grid, Order) {
 		return walls || deck
 	}))
 	g.Paint(Wood, field(func(p Vec3, d, _ float64) bool { return d <= 0 && p.Y > 2.5 && p.Y <= 3.5 }))
-	return g, Sweep(P(0, 0), math.Pi/2)
+	return Sweep(P(0, 0), math.Pi/2)
 }

@@ -44,7 +44,7 @@ func (s CruiseShip) hullHalfWidth(x, y, inset float64) float64 {
 	return w - inset
 }
 
-func (s CruiseShip) Build() (*Grid, Order) {
+func (s CruiseShip) Build(g *Grid) Order {
 	if s.Length == 0 {
 		s.Length, s.Beam, s.Depth = 120, 18, 10
 	}
@@ -54,7 +54,6 @@ func (s CruiseShip) Build() (*Grid, Order) {
 			return math.Abs(p.Z) <= s.hullHalfWidth(p.X, p.Y, inset)
 		}}
 	}
-	g := NewGrid()
 	g.Use(White).FillVolume(hull(0, 0, D))
 	g.Carve(hull(1.2, 1.2, D-0.6))
 	// Internal decks, clipped to the hull.
@@ -126,5 +125,5 @@ func (s CruiseShip) Build() (*Grid, Order) {
 	g.Use(Red).Fill(funnel)
 	g.Paint(Charcoal, Sheared{EllipticCylinder{P(-L/2+30, 0), 5, 2.8, top + 7, top + 9}, P(-0.35, 0), top})
 	g.Carve(Sheared{EllipticCylinder{P(-L/2+30, 0), 3.8, 1.6, top + 7.5, top + 9}, P(-0.35, 0), top})
-	return g, Along(P(-1, 0))
+	return Along(P(-1, 0))
 }

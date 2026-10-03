@@ -16,10 +16,9 @@ func init() { Register(MedievalTower{}) }
 func (MedievalTower) Name() string  { return "medieval_tower" }
 func (MedievalTower) Title() string { return "Medieval Tower" }
 
-func (MedievalTower) Build() (*Grid, Order) {
+func (MedievalTower) Build(g *Grid) Order {
 	const hill, top = 8.0, 46.0
 	center := P(0, 0)
-	g := NewGrid()
 	// The motte: a smooth grassy frustum shell, so its slope reads cleanly.
 	g.Use(Grass).FillVolume(Subtract(Frustum{center, 24, 14, 0, hill}, Frustum{center, 22, 12.5, 0, hill - 1.5}))
 	g.Use(Stone)
@@ -44,5 +43,5 @@ func (MedievalTower) Build() (*Grid, Order) {
 		}
 		g.Build(kit.Turret{Center: at, Radius: 1.8, Base: top - 2, Top: top + 3, RoofHeight: 4.5, Cantilever: 3, RoofColor: Red})
 	}
-	return g, Sweep(center, math.Pi/2)
+	return Sweep(center, math.Pi/2)
 }

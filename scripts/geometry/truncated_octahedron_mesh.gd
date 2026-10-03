@@ -30,7 +30,10 @@ static func face_normals() -> PackedVector3Array:
 static func shared_mesh() -> ArrayMesh:
 	if _shared_mesh != null:
 		return _shared_mesh
+	# Indexed: each face's corners are stored once (72 vertices) and shared by its
+	# triangles, so the vertex shader runs ~45% less than with 132 unindexed corners.
 	var positions := PackedVector3Array()
+	var indices := PackedInt32Array()
 	var normals := PackedVector3Array()
 	var uvs := PackedVector2Array()
 	var polygon_data := PackedVector2Array()
@@ -47,19 +50,22 @@ static func shared_mesh() -> ArrayMesh:
 		polygon.sort_custom(func(a: Vector3, b: Vector3) -> bool:
 			return atan2((a - center).dot(v), (a - center).dot(u)) < atan2((b - center).dot(v), (b - center).dot(u)))
 		var apothem := (polygon[0] - center).length() * cos(PI / polygon.size())
+		var first := positions.size()
+		for vertex in polygon:
+			positions.append(vertex)
+			normals.append(normal)
+			uvs.append(Vector2((vertex - center).dot(u), (vertex - center).dot(v)))
+			polygon_data.append(Vector2(polygon.size(), apothem))
 		for index in range(1, polygon.size() - 1):
 			# Godot front faces use clockwise winding.
-			for vertex in [polygon[0], polygon[index + 1], polygon[index]]:
-				positions.append(vertex)
-				normals.append(normal)
-				uvs.append(Vector2((vertex - center).dot(u), (vertex - center).dot(v)))
-				polygon_data.append(Vector2(polygon.size(), apothem))
+			indices.append_array([first, first + index + 1, first + index])
 	var arrays: Array = []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = positions
 	arrays[Mesh.ARRAY_NORMAL] = normals
 	arrays[Mesh.ARRAY_TEX_UV] = uvs
 	arrays[Mesh.ARRAY_TEX_UV2] = polygon_data
+	arrays[Mesh.ARRAY_INDEX] = indices
 	_shared_mesh = ArrayMesh.new()
 	_shared_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	return _shared_mesh

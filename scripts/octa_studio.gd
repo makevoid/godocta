@@ -31,6 +31,7 @@ func _ready() -> void:
 	_save_dialog.file_selected.connect(_save_structure)
 	_load_dialog = _make_dialog(FileDialog.FILE_MODE_OPEN_FILE)
 	_load_dialog.file_selected.connect(_load_structure)
+	_fit_window_to_screen()
 	select_preset(StructurePresets.Shape.CUBE)
 
 func select_preset(shape: StructurePresets.Shape) -> void:
@@ -41,8 +42,24 @@ func _present(structure: OctaStructure, preset: int = -1) -> void:
 	hud.show_structure(structure, preset)
 	renderer.display(structure)
 	var box := structure.bounds()
+	environment.apply_theme(WorldTheme.STUDIO if preset >= 0 else WorldTheme.name_for(structure.title))
+	camera.default_pitch = 0.48 if environment.theme_name == WorldTheme.STUDIO else 0.24
 	camera.frame_structure(box)
 	environment.fit(box)
+
+## The default 16:10 window is 1760 × 1100; shrink it to fit smaller displays unless an
+## explicit --resolution was requested.
+func _fit_window_to_screen() -> void:
+	var window := get_window()
+	if window.mode != Window.MODE_WINDOWED or OS.get_cmdline_args().has("--resolution"):
+		return
+	var usable := DisplayServer.screen_get_usable_rect(window.current_screen)
+	if usable.size.x <= 0 or usable.size.y <= 0:
+		return
+	var scale := minf(usable.size.x * 0.94 / window.size.x, usable.size.y * 0.94 / window.size.y)
+	if scale < 1.0:
+		window.size = Vector2i(Vector2(window.size) * scale)
+		window.position = usable.position + (usable.size - window.size) / 2
 
 func toggle_xray() -> void:
 	renderer.set_xray(not renderer.xray)

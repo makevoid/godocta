@@ -20,10 +20,9 @@ func init() { Register(Castle{}) }
 func (Castle) Name() string  { return "castle" }
 func (Castle) Title() string { return "Castle" }
 
-func (c Castle) Build() (*Grid, Order) {
+func (c Castle) Build(g *Grid) Order {
 	wall, ground := orDefault(c.Wall, 25), orDefault(c.Ground, 2)
 	plinth := wall + 13
-	g := NewGrid()
 	// Earth platform: grass outside the walls, a sand courtyard inside, water in the moat.
 	g.Use(DarkStone).Fill(Block(V(-plinth, 0, -plinth), V(plinth, ground-0.5, plinth)))
 	g.Paint(Grass, Block(V(-plinth, ground-0.5, -plinth), V(plinth, ground-0.5, plinth)))
@@ -56,7 +55,7 @@ func (c Castle) Build() (*Grid, Order) {
 	g.Paint(Water, Cylinder{Center: P(12, 12), Radius: 0.9, Y0: ground - 0.5, Y1: ground - 0.5})
 	// Wooden gate leaves closing the passage.
 	g.With(Wood, func() { g.Fill(Block(V(-2.5, ground, wall+5.5), V(2.5, ground+5, wall+5.5))) })
-	return g, Sweep(P(0, 0), math.Pi/2)
+	return Sweep(P(0, 0), math.Pi/2)
 }
 
 func orDefault(v, fallback float64) float64 {

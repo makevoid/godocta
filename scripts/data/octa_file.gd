@@ -109,11 +109,9 @@ func load_structure(path: String) -> OctaStructure:
 	for index in palette_size:
 		palette.append(Color8(bytes[offset], bytes[offset + 1], bytes[offset + 2]))
 		offset += 3
-	var cells := PackedInt32Array()
-	cells.resize(count * 3)
-	for index in cells.size():
-		cells[index] = bytes.decode_s32(offset + index * 4)
-	offset += cells.size() * 4
+	# Little-endian int32 triples: reinterpret the slice directly instead of decoding each.
+	var cells := bytes.slice(offset, offset + count * 12).to_int32_array()
+	offset += count * 12
 	last_error = OctaStructure.validation_error(cells, span)
 	if not last_error.is_empty():
 		return null

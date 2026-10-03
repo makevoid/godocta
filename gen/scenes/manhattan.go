@@ -23,9 +23,8 @@ var island = []Vec2{
 	{-20, 10}, {-19, 30}, {-16, 50}, {-14, 60}, {-10, 70},
 }
 
-func (Manhattan) Build() (*Grid, Order) {
+func (Manhattan) Build(g *Grid) Order {
 	const ground = 1.0
-	g := NewGrid()
 	g.Use(Charcoal).Fill(Prism{island, 0, ground - 0.5}) // Asphalt: the streets.
 	park := Block(V(-9, ground, -56), V(6, ground, -24))
 	landmarks := []Box{
@@ -87,7 +86,7 @@ func (Manhattan) Build() (*Grid, Order) {
 	g.Use(DarkStone).Fill(Block(V(42, 0, 60), V(50, ground-0.5, 72)))
 	g.Use(Sand).Build(kit.SuspensionBridge{From: P(17, 66), To: P(43, 66), Deck: ground + 3, Width: 4, TowerHeight: 11})
 	g.Build(liberty(P(-30, 92)))
-	return g, Outward(P(0, -8))
+	return Outward(P(0, -8))
 }
 
 // skyline gives the target height at a plan point: peaks in Midtown and Downtown.

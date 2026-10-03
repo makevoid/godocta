@@ -43,6 +43,10 @@ func _run() -> void:
 		await studio.renderer.assembly_finished
 		check(studio.renderer.timeline.elapsed == studio.renderer.timeline.duration, "Assembly completes on schedule")
 		check(not studio.renderer.is_processing(), "No per-frame render updates after assembly")
+		var deadline := Time.get_ticks_msec() + 10000
+		while studio.renderer.surface_multimesh == null and Time.get_ticks_msec() < deadline:
+			await process_frame
+		check(studio.renderer.drawn_count() < studio.renderer.structure.cell_count(), "Settled builds draw only surface cells")
 		check(studio.hud._state.text == "Assembly complete" and studio.hud._progress.value == 1.0, "HUD reflects completed assembly")
 		if capture:
 			await _capture(StructurePresets.TITLES[shape].to_lower())
@@ -61,6 +65,7 @@ func _run() -> void:
 	# X-ray swaps the material and keeps shared parameters in sync.
 	studio.toggle_xray()
 	check(studio.renderer.xray and studio.hud._xray.button_pressed, "X-ray toggles on, HUD in sync")
+	check(studio.renderer.drawn_count() == studio.renderer.structure.cell_count(), "X-ray draws every cell")
 	check(is_zero_approx(studio.renderer.material_override.get_shader_parameter("cell_gap")), "X-ray shares parameters")
 	studio.toggle_xray()
 	check(not studio.renderer.xray, "X-ray toggles off")
@@ -71,6 +76,10 @@ func _run() -> void:
 	await process_frame
 	var castle := studio.renderer.structure
 	check(castle != null and castle.title == "Castle" and castle.is_colored(), "Castle loads with colors")
+	check(studio.environment.theme_name == "castle", "Builds switch to their world theme")
+	studio.select_preset(StructurePresets.Shape.CUBE)
+	check(studio.environment.theme_name == WorldTheme.STUDIO, "Presets use the studio")
+	studio.hud.toolbar.gallery.get_popup().id_pressed.emit(gallery.find("res://structures/castle.octa"))
 	check(studio.renderer.timeline.duration > 4.0, "Large build takes longer to assemble")
 	var palette: PackedColorArray = studio.renderer.material_override.get_shader_parameter("palette")
 	check(palette.size() == 16 and palette[0].is_equal_approx(castle.palette[0].srgb_to_linear()), "Palette reaches the shader")

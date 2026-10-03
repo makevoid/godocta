@@ -9,7 +9,7 @@ import (
 func TestScenesCompile(t *testing.T) {
 	for _, scene := range All() {
 		t.Run(scene.Name(), func(t *testing.T) {
-			s, err := Compile(scene)
+			s, err := Compile(scene, DefaultDensity)
 			if err != nil {
 				t.Fatal(err)
 			}

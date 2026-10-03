@@ -13,7 +13,7 @@ import (
 // Version 1 stores coordinates only; version 2 adds a palette and one color byte per cell.
 const (
 	Version       = 2
-	MaxCells      = 200_000
+	MaxCells      = 1_000_000
 	MaxTitleBytes = 1024
 	MaxPalette    = 16
 	headerV1      = 20

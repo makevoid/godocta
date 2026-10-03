@@ -6,13 +6,15 @@ var yaw: float = 0.68
 var pitch: float = 0.48
 var distance: float = 27.0
 var auto_orbit: bool = false
+## Default elevation: high over the studio floor, low in themed worlds to show the sky.
+var default_pitch: float = 0.48
 var _dragging: bool = false
 var _pan: bool = false
 var _default_focus: Vector3 = Vector3(0, 4.0, 0)
 var _default_distance: float = 27.0
 
 func _ready() -> void:
-	fov = 39.0
+	fov = 45.0
 	near = 0.05
 	far = 1000.0
 	h_offset = -2.2
@@ -20,7 +22,7 @@ func _ready() -> void:
 
 func frame_structure(box: AABB) -> void:
 	_default_focus = Vector3(0, box.size.y * 0.46, 0)
-	_default_distance = maxf(box.size.length() * 1.6, 8.0)
+	_default_distance = maxf(box.size.length() * 1.38, 8.0)
 	far = maxf(_default_distance * 20.0, 1000.0)
 	near = maxf(_default_distance * 0.0001, 0.01)
 	reset_view()
@@ -29,7 +31,7 @@ func reset_view() -> void:
 	focus = _default_focus
 	distance = _default_distance
 	yaw = 0.68
-	pitch = 0.48
+	pitch = default_pitch
 	_update_transform()
 
 func _process(delta: float) -> void:

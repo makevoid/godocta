@@ -58,13 +58,15 @@ func _test_geometry() -> void:
 	var arrays := mesh.surface_get_arrays(0)
 	var positions: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
-	check(positions.size() == 132, "Mesh must contain exactly 44 triangles")
+	var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+	check(positions.size() == 72, "Each face stores its corners once: 6 × 4 + 8 × 6")
+	check(indices.size() == 132, "Mesh must contain exactly 44 triangles")
 	var volume := 0.0
-	for index in range(0, positions.size(), 3):
-		var a := positions[index]
-		var b := positions[index + 1]
-		var c := positions[index + 2]
-		check((b - a).cross(c - a).dot(normals[index]) < 0.0, "Clockwise outward winding")
+	for index in range(0, indices.size(), 3):
+		var a := positions[indices[index]]
+		var b := positions[indices[index + 1]]
+		var c := positions[indices[index + 2]]
+		check((b - a).cross(c - a).dot(normals[indices[index]]) < 0.0, "Clockwise outward winding")
 		volume += a.dot(b.cross(c)) / 6.0
 	check(is_equal_approx(absf(volume), 0.5), "BCC cell volume must be 1/2 cubic unit")
 
@@ -123,8 +125,8 @@ func _test_timeline() -> void:
 	check(AssemblyTimeline.duration_for(1729) == 4.0, "The reference cube takes four seconds")
 	check(AssemblyTimeline.duration_for(10) == 4.0, "Small builds never go below four seconds")
 	var castle_time := AssemblyTimeline.duration_for(70_000)
-	check(castle_time > 12.0 and castle_time < AssemblyTimeline.duration_for(200_000), "Bigger builds take longer")
-	check(AssemblyTimeline.duration_for(200_000) <= 24.0, "Assembly time is capped")
+	check(castle_time > 12.0 and castle_time < AssemblyTimeline.duration_for(1_000_000), "Bigger builds take longer")
+	check(AssemblyTimeline.duration_for(1_000_000) <= 24.0, "Assembly time is capped")
 	timeline.configure(1729)
 	timeline.restart()
 	check(timeline.elapsed == 0.0, "Replay resets clock")

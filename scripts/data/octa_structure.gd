@@ -3,7 +3,7 @@ extends RefCounted
 ## Compact, render-independent structure. No per-cell Nodes, meshes or transforms.
 ## The authoritative arrangement occupies 12 bytes per cell, excluding metadata.
 
-const MAX_CELLS: int = 200_000
+const MAX_CELLS: int = 1_000_000
 const MAX_PALETTE: int = 16
 var title: String = "Untitled"
 var cell_span: float = 1.0

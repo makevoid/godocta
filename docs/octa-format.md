@@ -18,7 +18,7 @@ Exact file size: `20 + T + 12 × N` bytes. No trailing bytes are accepted. An em
 
 Constraints used by this implementation:
 
-- `N ≤ 200,000`, `T ≤ 1,024`.
+- `N ≤ 1,000,000`, `T ≤ 1,024`.
 - Cell span is finite and between `0.001` and `1000` inclusive.
 - Coordinates are integers in `[-1,000,000, 1,000,000]`.
 - All three components of each coordinate have the same parity.
