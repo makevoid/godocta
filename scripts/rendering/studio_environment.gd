@@ -1,6 +1,9 @@
 class_name StudioEnvironment
 extends Node3D
 
+var _key: DirectionalLight3D
+var _ground: ShaderMaterial
+
 func _ready() -> void:
 	var world := WorldEnvironment.new()
 	var environment := Environment.new()
@@ -13,6 +16,7 @@ func _ready() -> void:
 	world.environment = environment
 	add_child(world)
 	var key := DirectionalLight3D.new()
+	_key = key
 	key.rotation_degrees = Vector3(-48, -35, 0)
 	key.light_color = Color("e7f4e9")
 	key.light_energy = 1.6
@@ -31,4 +35,13 @@ func _ready() -> void:
 	var material := ShaderMaterial.new()
 	material.shader = preload("res://shaders/ground.gdshader")
 	ground.material_override = material
+	_ground = material
 	add_child(ground)
+
+## Scale the shadow range and the ground grid's fade and ring to a structure.
+func fit(box: AABB) -> void:
+	var reach := maxf(Vector2(box.size.x, box.size.z).length() * 0.5, 9.0)
+	_key.directional_shadow_max_distance = maxf(75.0, box.size.length() * 2.6)
+	_ground.set_shader_parameter("ring_radius", reach)
+	_ground.set_shader_parameter("fade_start", reach)
+	_ground.set_shader_parameter("fade_end", reach * 2.7)

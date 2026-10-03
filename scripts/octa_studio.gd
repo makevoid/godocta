@@ -5,23 +5,27 @@ extends Node3D
 var renderer := StructureRenderer.new()
 var camera := OrbitCamera.new()
 var hud := StudioHUD.new()
+var environment: StudioEnvironment
 var _files := OctaFile.new()
 var _save_dialog: FileDialog
 var _load_dialog: FileDialog
 
 func _ready() -> void:
-	add_child(StudioEnvironment.new())
+	environment = StudioEnvironment.new()
+	add_child(environment)
 	add_child(renderer)
 	add_child(camera)
 	add_child(hud)
 	camera.current = true
 	hud.toolbar.shape_selected.connect(select_preset)
+	hud.toolbar.file_selected.connect(_load_structure)
 	hud.toolbar.replay_requested.connect(renderer.replay)
 	hud.toolbar.save_requested.connect(_choose_save)
 	hud.toolbar.load_requested.connect(_choose_load)
 	hud.reset_view_requested.connect(camera.reset_view)
 	hud.orbit_changed.connect(func(enabled: bool) -> void: camera.auto_orbit = enabled)
 	hud.gap_changed.connect(renderer.set_gap)
+	hud.xray_changed.connect(renderer.set_xray)
 	renderer.assembly_progress.connect(hud.show_progress)
 	_save_dialog = _make_dialog(FileDialog.FILE_MODE_SAVE_FILE)
 	_save_dialog.file_selected.connect(_save_structure)
@@ -31,9 +35,18 @@ func _ready() -> void:
 
 func select_preset(shape: StructurePresets.Shape) -> void:
 	var structure := StructurePresets.generate(shape)
-	hud.show_structure(structure, shape)
+	_present(structure, shape)
+
+func _present(structure: OctaStructure, preset: int = -1) -> void:
+	hud.show_structure(structure, preset)
 	renderer.display(structure)
-	camera.frame_structure(structure.bounds())
+	var box := structure.bounds()
+	camera.frame_structure(box)
+	environment.fit(box)
+
+func toggle_xray() -> void:
+	renderer.set_xray(not renderer.xray)
+	hud.set_xray(renderer.xray)
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed or event.echo:
@@ -44,6 +57,12 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	match event.physical_keycode:
 		KEY_1, KEY_2, KEY_3, KEY_4:
 			select_preset((event.physical_keycode - KEY_1) as StructurePresets.Shape)
+		KEY_5, KEY_6, KEY_7, KEY_8, KEY_9:
+			var index: int = event.physical_keycode - KEY_5
+			if index < hud.toolbar.gallery_paths.size():
+				_load_structure(hud.toolbar.gallery_paths[index])
+		KEY_X:
+			toggle_xray()
 		KEY_R, KEY_SPACE:
 			renderer.replay()
 		KEY_F:
@@ -72,6 +91,7 @@ func _save_structure(path: String) -> void:
 		path += ".octa"
 	if _files.save_structure(path, renderer.structure) == OK:
 		hud.notify("Saved " + path.get_file())
+		hud.toolbar.refresh_gallery()
 	else:
 		_show_error(_files.last_error)
 
@@ -80,9 +100,7 @@ func _load_structure(path: String) -> void:
 	if structure == null:
 		_show_error(_files.last_error)
 		return
-	hud.show_structure(structure)
-	renderer.display(structure)
-	camera.frame_structure(structure.bounds())
+	_present(structure)
 	hud.notify("Loaded " + path.get_file())
 
 func _show_error(message: String) -> void:

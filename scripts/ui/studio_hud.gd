@@ -4,6 +4,7 @@ extends CanvasLayer
 signal reset_view_requested
 signal orbit_changed(enabled: bool)
 signal gap_changed(value: float)
+signal xray_changed(enabled: bool)
 var toolbar: StructureToolbar
 var _title: Label
 var _subtitle: Label
@@ -15,6 +16,7 @@ var _state: Label
 var _time: Label
 var _toast: Label
 var _toast_remaining: float = 0.0
+var _xray: CheckButton
 
 func _ready() -> void:
 	var root := Control.new()
@@ -110,6 +112,11 @@ func _build_view_controls(root: Control) -> void:
 	orbit.text = "Auto orbit"
 	orbit.toggled.connect(func(value: bool) -> void: orbit_changed.emit(value))
 	box.add_child(orbit)
+	_xray = CheckButton.new()
+	_xray.text = "X-ray view   X"
+	_xray.tooltip_text = "Semi-transparent cells with every edge and vertex visible."
+	_xray.toggled.connect(func(value: bool) -> void: xray_changed.emit(value))
+	box.add_child(_xray)
 	box.add_child(StudioTheme.label("CELL SEPARATION", 10, StudioTheme.MUTED))
 	var gap := HSlider.new()
 	gap.min_value = 0
@@ -160,21 +167,26 @@ func _build_footer(root: Control) -> void:
 	var help := VBoxContainer.new()
 	help.alignment = BoxContainer.ALIGNMENT_CENTER
 	help.add_child(StudioTheme.label("Drag to orbit   ·   Scroll to zoom   ·   Shift + drag to pan", 13, StudioTheme.MUTED))
-	help.add_child(StudioTheme.label("1–4  Switch structure     R  Replay     F  Reset view", 11, StudioTheme.MUTED))
+	help.add_child(StudioTheme.label("1–4  Primitives     5–9  Builds     X  X-ray     R  Replay     F  Reset view", 11, StudioTheme.MUTED))
 	row.add_child(help)
 
 func show_structure(structure: OctaStructure, preset: int = -1) -> void:
 	_title.text = structure.title
 	_number.text = "%02d / PRIMITIVE" % (preset + 1) if preset >= 0 else "FILE / STRUCTURE"
-	_subtitle.text = StructurePresets.DESCRIPTIONS[preset] if preset >= 0 else "%.2f-unit cells · loaded arrangement" % structure.cell_span
+	var size := structure.bounds().size
+	_subtitle.text = StructurePresets.DESCRIPTIONS[preset] if preset >= 0 \
+		else "%s × %s × %s units" % [_format_count(roundi(size.x)), _format_count(roundi(size.y)), _format_count(roundi(size.z))]
 	_count.text = _format_count(structure.cell_count())
 	_memory.text = "%.1f KiB" % (structure.storage_bytes() / 1024.0)
 	toolbar.select_shape(preset)
 
-func show_progress(fraction: float) -> void:
+func show_progress(fraction: float, duration: float) -> void:
 	_progress.value = fraction
 	_state.text = "Assembling…" if fraction < 1.0 else "Assembly complete"
-	_time.text = "%.2f / 4.00 s   ·   CUBIC EASE OUT" % (fraction * AssemblyTimeline.DURATION)
+	_time.text = "%.2f / %.2f s   ·   CUBIC EASE OUT" % [fraction * duration, duration]
+
+func set_xray(enabled: bool) -> void:
+	_xray.set_pressed_no_signal(enabled)
 
 func notify(message: String) -> void:
 	_toast.text = message
