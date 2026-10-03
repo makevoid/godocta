@@ -89,7 +89,9 @@ void sky() {
 	}
 	// Distant hills or skyline, fading into the haze at their base. They continue a hair
 	// below the horizon so they meet the far edge of the ground plane without a gap.
-	if (silhouette_height > 0.0 && y > -0.012) {
+	// Five fbm octaves sum to < 1; even the two hill bands cannot exceed 1.1.
+	// Above that bound the expensive ridge noise cannot contribute a pixel.
+	if (silhouette_height > 0.0 && y > -0.012 && y < silhouette_height * 1.1) {
 		float top = ridge(dir) * silhouette_height;
 		if (y < top && top > 0.001) {
 			float depth = clamp(y / max(top, 0.0001), 0.0, 1.0);

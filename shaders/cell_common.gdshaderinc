@@ -32,8 +32,19 @@ vec3 shade(vec4 cell_paint, float tint, vec2 plain, vec2 painted) {
 // INSTANCE_CUSTOM: r = assembly rank, g = random seed, b = normalized height, a = color.
 // Outputs the height tint and arrival glow; callers store them in the varyings.
 void assemble(inout vec3 vertex, inout vec3 normal, vec4 custom, out float tint, out float glow) {
+	tint = custom.b;
+	glow = 0.0;
+	// This uniform branch also skips the rank/seed work in every shadow pass.
+	if (assembly_time >= release_window + settle_time) {
+		vertex *= 1.0 - cell_gap;
+		return;
+	}
 	float delay = release_window * (1.0 - sqrt(1.0 - custom.r));
 	float t = clamp((assembly_time - delay) / settle_time, 0.0, 1.0);
+	if (t >= 1.0) {
+		vertex *= 1.0 - cell_gap;
+		return;
+	}
 	float ease_out = 1.0 - pow(1.0 - t, 3.0);
 	float remaining = 1.0 - ease_out;
 	float seed = custom.g;
@@ -42,32 +53,29 @@ void assemble(inout vec3 vertex, inout vec3 normal, vec4 custom, out float tint,
 	vertex = turn * vertex * (1.0 - cell_gap) * smoothstep(0.0, 0.28, t);
 	vertex += vec3(sin(seed * 6.283185) * 3.5, 5.0 + seed * 2.0, cos(seed * 6.283185) * 3.5) * remaining * flight_scale;
 	normal = turn * normal;
-	tint = custom.b;
 	glow = sin(t * PI) * 0.2;
 }
 
 // Distance from a face-local point to the nearest polygon edge. polygon = (sides, apothem).
-// Vertex i of the regular polygon lies at angle 2πi/sides; edge normals bisect them.
+// The shared mesh has only squares and hexagons, with a vertex on the +U axis.
+// Fold into the first quadrant to replace six trigonometric half-plane tests.
 float edge_distance(vec2 uv, vec2 polygon) {
-	float result = 1.0;
-	for (int i = 0; i < 6; i++) {
-		if (float(i) < polygon.x) {
-			float angle = (2.0 * float(i) + 1.0) * PI / polygon.x;
-			result = min(result, polygon.y - dot(uv, vec2(cos(angle), sin(angle))));
-		}
+	vec2 p = abs(uv);
+	if (polygon.x < 5.0) {
+		return polygon.y - (p.x + p.y) * 0.707106781187;
 	}
-	return result;
+	return polygon.y - max(p.y, p.x * 0.866025403784 + p.y * 0.5);
 }
 
 // Distance from a face-local point to the nearest polygon vertex.
+// Symmetry leaves two candidates; compare their projections before taking one length.
 float vertex_distance(vec2 uv, vec2 polygon) {
-	float radius = polygon.y / cos(PI / polygon.x);
-	float result = 1.0;
-	for (int i = 0; i < 6; i++) {
-		if (float(i) < polygon.x) {
-			float angle = 2.0 * float(i) * PI / polygon.x;
-			result = min(result, length(uv - radius * vec2(cos(angle), sin(angle))));
-		}
+	vec2 p = abs(uv);
+	if (polygon.x < 5.0) {
+		float radius = polygon.y * 1.414213562373;
+		return length(vec2(max(p.x, p.y) - radius, min(p.x, p.y)));
 	}
-	return result;
+	float radius = polygon.y * 1.154700538379;
+	vec2 corner = p.x > p.y * 1.732050807569 ? vec2(radius, 0.0) : vec2(radius * 0.5, polygon.y);
+	return length(p - corner);
 }

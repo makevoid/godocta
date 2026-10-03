@@ -32,13 +32,21 @@ void vertex() {
 
 void fragment() {
 	vec2 p = world_position.xz;
-	vec2 grid = abs(fract(p - 0.5) - 0.5) / max(fwidth(p), vec2(0.001));
-	float line = 1.0 - min(min(grid.x, grid.y), 1.0);
-	float fade = 1.0 - smoothstep(fade_start, fade_end, length(p));
-	float ring = (1.0 - smoothstep(0.015, 0.06, abs(length(p) - ring_radius))) * 0.3;
-	float variation = (noise(p * 0.08) * 0.65 + noise(p * 0.5) * 0.35 - 0.5) * mottle;
-	vec3 near = ground_color.rgb * (1.0 + variation) + line_color.rgb * (line * 0.32 * fade + ring) * grid_strength;
-	float far = smoothstep(far_start, far_end, length(p));
+	float distance = length(p);
+	float variation = 0.0;
+	if (mottle > 0.0) {
+		variation = (noise(p * 0.08) * 0.65 + noise(p * 0.5) * 0.35 - 0.5) * mottle;
+	}
+	vec3 near = ground_color.rgb * (1.0 + variation);
+	// Theme uniforms make these branches coherent across the entire ground draw.
+	if (grid_strength > 0.0) {
+		vec2 grid = abs(fract(p - 0.5) - 0.5) / max(fwidth(p), vec2(0.001));
+		float line = 1.0 - min(min(grid.x, grid.y), 1.0);
+		float fade = 1.0 - smoothstep(fade_start, fade_end, distance);
+		float ring = (1.0 - smoothstep(0.015, 0.06, abs(distance - ring_radius))) * 0.3;
+		near += line_color.rgb * (line * 0.32 * fade + ring) * grid_strength;
+	}
+	float far = smoothstep(far_start, far_end, distance);
 	ALBEDO = near * lit * (1.0 - far);
 	EMISSION = near * (1.0 - lit) * (1.0 - far) + far_color.rgb * far;
 	ROUGHNESS = mix(0.95, 0.3, water);

@@ -160,6 +160,8 @@ progress       = 1 - (1 - t)^3
 
 The shader also rotates, scales, and offsets each arriving cell using its seed.
 Larger bounds increase flight height. Replay reuses buffers and resets the clock.
+Settled cells bypass the rotation and flight math; once the whole build finishes,
+a uniform branch also skips release-time calculations, including in shadow passes.
 Natural completion disables the renderer's `_process()`; the HUD and camera may
 still process, and the scene still renders. Empty data produces zero instances and
 completed progress without starting an assembly.
@@ -193,6 +195,13 @@ worlds would need spatial chunks rather than per-cell nodes.
 are sRGB; upload converts them with `srgb_to_linear()`. The shared shader slightly
 desaturates palette colors and shades them more gently than the uncolored base.
 X-ray also disables instance shadow casting.
+
+Face edge and vertex distances use square/hexagon symmetry instead of per-pixel
+trigonometric loops. They preserve the mesh's existing UV/UV2 contract and assume
+each face has a vertex on its positive U axis. The ground skips grid and mottling
+work when their theme strengths are zero; the sky skips ridge noise above the
+maximum possible silhouette height. These shortcuts keep the geometry, resolution,
+antialiasing, shadows, and material appearance unchanged.
 
 ## Worlds and camera
 
