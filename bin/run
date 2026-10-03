@@ -1,0 +1,15 @@
+#!/bin/zsh
+# Run Octa Studio. Extra arguments go to Godot, e.g. bin/run --resolution 1440x900
+set -e
+cd -- "$(dirname -- "$0")/.."
+if command -v godot >/dev/null 2>&1; then
+  GODOT=godot
+elif [[ -x ${GODOT_APP:-/Applications/Godot.app}/Contents/MacOS/Godot ]]; then
+  GODOT=${GODOT_APP:-/Applications/Godot.app}/Contents/MacOS/Godot
+else
+  echo "Godot 4.4+ not found: install it (brew install --cask godot) or set GODOT_APP." >&2
+  exit 1
+fi
+# Import first so newly added scripts and class_names resolve.
+[[ -d .godot/imported ]] || "$GODOT" --headless --path "$PWD" --editor --import --quit >/dev/null 2>&1
+exec "$GODOT" --path "$PWD" "$@"

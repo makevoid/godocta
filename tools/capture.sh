@@ -10,6 +10,6 @@ APP=${GODOT_APP:-/Applications/Godot.app}
 mkdir -p captures
 : > captures/capture.log
 open -g -j -n -W -a "$APP" --stdout "$PWD/captures/capture.log" --stderr "$PWD/captures/capture.log" \
-  --args --path "$PWD" --resolution 1760x1100 --position 4000,4000 --script tools/capture.gd -- "$@"
+  --args --path "$PWD" --resolution 1900x1000 --position 4000,4000 --script tools/capture.gd -- "$@"
 grep -E "Showing|Captured|Bench|ERROR|WARNING" captures/capture.log
 ! grep -q "ERROR" captures/capture.log

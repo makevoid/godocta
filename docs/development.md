@@ -20,7 +20,7 @@ godot --path .
 Alternatively open `project.godot` in the editor and press F5. On macOS,
 `Launch Octa.command` first uses `godot` on PATH, then
 `/Applications/Godot.app/Contents/MacOS/Godot`. It changes into the project directory
-before launching. The native window defaults to 1760×1100, minimum 1100×720, and
+before launching. The native window is 1900×1000 points × the display scale (3800×2000 px at 2×), minimum 1100×720, and
 shrinks to fit the display unless an explicit `--resolution` is supplied.
 
 After adding or renaming scripts/classes, re-run the import command before
@@ -86,7 +86,7 @@ tools/capture.sh --shapes=castle,arena --views= --bench
 ```
 
 `tools/capture.sh` changes to the repo root, launches a new Godot app instance with
-`open -g -j -n -W`, requests 1760×1100 at an offscreen position, and waits for exit.
+`open -g -j -n -W`, requests 1900×1000 at an offscreen position (3800×2000 px on a 2× display), and waits for exit.
 It uses a real GPU; `--headless` cannot produce screenshots. Set `GODOT_APP` to a
 different `.app` path if necessary. The wrapper itself requires macOS and zsh.
 
@@ -127,6 +127,7 @@ the same resolution, mode, gap, and hardware. This is not a pure GPU timer.
 | Change timing | `AssemblyTimeline` and shared shader formulas/uniforms; renderer | Timing and scene tests, partial captures via `--at` |
 | Change environment | `WorldTheme`, `StudioEnvironment`, sky/ground shaders | Scene theme wiring, themed hero/side captures |
 | Change data or format | Both codecs/validators, `docs/octa-format.md`, relevant GDScript/Go tests | Both language suites and checked-in generated files |
+| Change brush tools | `OctaEditor`, `StructureTools`, `BrushGizmo`, `ToolPalette`, `brush`/`black_hole` shaders, `OctaStudio` keys | Core editor checks, scene `_test_tools()`, hidden GPU capture of the gizmo |
 | Change controls | `StudioHUD`, `StructureToolbar`, `StudioTheme`, `OrbitCamera`, `OctaStudio` signal wiring | Scene tests, native input/dialog inspection, README controls |
 
 For a new Go scene, follow the complete example in the [generator guide](../gen/README.md).

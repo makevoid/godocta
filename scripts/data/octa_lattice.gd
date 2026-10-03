@@ -21,3 +21,11 @@ static func is_valid(cell: Vector3i) -> bool:
 
 static func to_world(cell: Vector3i, cell_span: float = 1.0) -> Vector3:
 	return Vector3(cell) * (cell_span * 0.5)
+
+## The cell containing a world point. Truncated octahedrons are the Voronoi cells of the
+## BCC lattice, so this is the nearest all-even or all-odd coordinate triple.
+static func nearest(point: Vector3, cell_span: float = 1.0) -> Vector3i:
+	var q := point * (2.0 / cell_span)
+	var even := Vector3i(roundi(q.x * 0.5) * 2, roundi(q.y * 0.5) * 2, roundi(q.z * 0.5) * 2)
+	var odd := Vector3i(floori(q.x * 0.5) * 2 + 1, floori(q.y * 0.5) * 2 + 1, floori(q.z * 0.5) * 2 + 1)
+	return even if q.distance_squared_to(Vector3(even)) <= q.distance_squared_to(Vector3(odd)) else odd

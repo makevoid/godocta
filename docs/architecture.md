@@ -16,7 +16,8 @@ validation limits, palette capacity, and binary layout.
 | `scripts/data/` | Lattice, structure storage, authoring, presets, binary codec |
 | `scripts/geometry/` | Cached truncated-octahedron mesh |
 | `scripts/rendering/` | Instancing, assembly clock, camera, world environment |
-| `scripts/ui/` | Programmatically built controls, styles, unit diagram |
+| `scripts/tools/` | Brush tools: stroke input, edit effects, brush cursor |
+| `scripts/ui/` | Programmatically built controls, styles, unit diagram, tool palette |
 | `shaders/` | Cell motion/materials, procedural sky, ground/water |
 | `gen/` | Standalone Go module: `octa` → `kit` → `scenes` → CLI |
 | `structures/` | Five generated builds and the 15-cell `neighbors.octa` fixture |
@@ -62,6 +63,7 @@ the current build. Successful saves refresh the gallery.
 | [OctaLattice](../scripts/data/octa_lattice.gd) | `RefCounted` | `is_valid()`, `to_world()`, `NEIGHBORS`, coordinate cap |
 | [OctaStructure](../scripts/data/octa_structure.gd) | `RefCounted` | Validated packed triples; `from_cells()`, `validation_error()`, `set_colors()`, `color_error()`, getters, `storage_bytes()`, `bounds()` |
 | [OctaStructureBuilder](../scripts/data/octa_structure_builder.gd) | `RefCounted` | Mutable occupancy dictionary; `add()`, `remove()`, `contains()`, `build()` sorted by Y/Z/X |
+| [OctaEditor](../scripts/data/octa_editor.gd) | `RefCounted` | Pending edits over one structure: `pick()` ray march, `cells_within()` globe/half globe, `free_slots()` attached growth, `add()`/`remove()`, `color_for()`, `build()` |
 | [OctaFile](../scripts/data/octa_file.gd) | `RefCounted` | `save_structure()` returns a Godot `Error`; `load_structure()` returns data or `null`; `last_error` explains failures |
 | [StructurePresets](../scripts/data/structure_presets.gd) | `RefCounted` | Shape enum, titles/descriptions, `generate()`, `mostly_inside()`, cached volume samples |
 | [TruncatedOctahedronMesh](../scripts/geometry/truncated_octahedron_mesh.gd) | `RefCounted` | Unit `vertices()`, `face_normals()`, cached `shared_mesh()` |
@@ -70,6 +72,9 @@ the current build. Successful saves refresh the gallery.
 | [OrbitCamera](../scripts/rendering/orbit_camera.gd) | `Camera3D` | `frame_structure()`, `reset_view()`, orbit/pan/zoom input, auto-orbit, clipping planes |
 | [StudioEnvironment](../scripts/rendering/studio_environment.gd) | `Node3D` | Creates sky, ground and two lights; `apply_theme()` and bounds-dependent `fit()` |
 | [WorldTheme](../scripts/rendering/world_theme.gd) | `RefCounted` | `name_for()` title lookup, `themes()` dictionaries, studio and shared afternoon defaults |
+| [StructureTools](../scripts/tools/structure_tools.gd) | `Node3D` | Tool enum, stroke input, `apply()`, `commit()`, `reset()`, pending-cell and black-hole overlays |
+| [BrushGizmo](../scripts/tools/brush_gizmo.gd) | `Node3D` | Globe/dome brush outline, scoop cut-plane ring, billboard black hole |
+| [ToolPalette](../scripts/ui/tool_palette.gd) | `PanelContainer` | Tool buttons, brush size, scoop tilt; `show_tool()`, `show_radius()`, `show_tilt()` |
 | [StudioHUD](../scripts/ui/studio_hud.gd) | `CanvasLayer` | `show_structure()`, `show_progress()`, `set_xray()`, `notify()`; status, view controls, toasts and FPS |
 | [StructureToolbar](../scripts/ui/structure_toolbar.gd) | `PanelContainer` | Preset buttons, `refresh_gallery()`, `select_shape()`, `gallery_paths`, action signals |
 | [StudioTheme](../scripts/ui/studio_theme.gd) | `RefCounted` | Color constants and `create()`, `panel()`, `label()`, `button()` factories |
@@ -125,7 +130,7 @@ ordinary texture coordinates would break both materials.
 
 ## Rendering, animation, and workers
 
-`display(data, animate=true)` expects non-null, valid data. It builds one full
+`display(data, animate=true, recenter=true)` expects non-null, valid data. It builds one full
 `MultiMesh`, assigns the shared unit mesh, and uploads this 64-byte instance layout:
 
 | Float offsets | Meaning |
@@ -210,6 +215,32 @@ use defaults in `apply_theme()`. A new theme can reuse `_late_afternoon()`.
 `OrbitCamera.frame_structure()` sets focus, distance, and near/far planes from its
 bounds. `_present()` uses pitch 0.48 for studio and 0.24 for other worlds so their
 skies stay visible. Reset framing removes accumulated pan/zoom/orbit changes.
+
+## Brush tools
+
+`StructureTools` is added after the camera so its `_unhandled_input` sees a left
+press first; with a tool active it consumes left strokes, while right drag, Alt/Shift
+drag, middle drag and the wheel still reach `OrbitCamera`. Each frame it casts the
+mouse ray into structure space (the node follows the renderer's position) and
+`OctaEditor.pick()` marches it through the occupancy dictionary using
+`OctaLattice.nearest()`: truncated octahedrons are the BCC Voronoi cells, so the
+nearest lattice point is the containing cell. Missed rays fall to the ground plane
+under the original bottom layer.
+
+During a stroke `apply()` runs every 50 ms. Brush in fills up to ~1.5×radius free
+slots per tick, nearest first, that touch an occupied cell or lie on the ground
+layer. Black hole removes the ball; scoop removes the half ball above a plane about
+0.75 span under the first hit, tilted in screen space, and later ticks slide along
+that plane. `StructureRenderer.set_editing(true)` finishes any assembly and keeps
+the full buffer drawn; `hide_cell()` collapses removed originals. Added cells and
+the spiralling swallowed cells are drawn by two overlay `MultiMeshInstance3D`s that
+share the renderer's current material (rank 0, so they are always settled).
+
+After `COMMIT_DELAY` idle seconds, or before Save/Replay, `commit()` calls
+`display(data, false, recenter = false)`, which keeps the node position and the
+height-shading reference box, then rebuilds the editor. A new surface task starts as
+usual. Edits to large builds pay one GDScript rebuild per commit (≈0.1–0.3 s for
+150,000 cells); structures replaced from outside the tools drop pending effects.
 
 The generator's types, component catalog, sampling rules, and extension workflow
 are documented in the [generator guide](../gen/README.md).

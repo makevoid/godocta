@@ -69,6 +69,7 @@ func _run() -> void:
 	check(is_zero_approx(studio.renderer.material_override.get_shader_parameter("cell_gap")), "X-ray shares parameters")
 	studio.toggle_xray()
 	check(not studio.renderer.xray, "X-ray toggles off")
+	await _test_tools()
 	# Generated builds load from the gallery with their palette.
 	var gallery := studio.hud.toolbar.gallery_paths
 	check(gallery.size() >= 5, "Builds gallery lists generated structures")
@@ -88,6 +89,52 @@ func _run() -> void:
 	check(studio.renderer.multimesh.instance_count == 0 and not studio.renderer.is_processing(), "Empty file renders safely")
 	print("Scene integration: %s" % ("PASS" if failures == 0 else "FAIL"))
 	quit(1 if failures else 0)
+
+## Brush tools: palette wiring, pending edits, in-place commits and HUD counts.
+func _test_tools() -> void:
+	studio.select_preset(StructurePresets.Shape.CUBE)
+	studio.renderer.set_gap(0.045)
+	var tools := studio.tools
+	var origin := studio.renderer.position
+	studio.hud.tools.tool_buttons[StructureTools.Tool.BLACK_HOLE].pressed.emit()
+	check(tools.tool == StructureTools.Tool.BLACK_HOLE and studio.hud.tools.tool_buttons[2].button_pressed, "Palette selects the black hole")
+	var top := Vector3(0, studio.renderer.structure.bounds().end.y, 0)
+	tools.apply(top)
+	check(not studio.renderer.timeline.is_running(), "Editing finishes the assembly")
+	check(tools.editor.cell_count() < 1729, "Black hole swallows cells")
+	check(studio.renderer.drawn_count() == 1729, "Pending edits draw the full buffer")
+	check(studio.renderer.structure.cell_count() == 1729, "Edits stay pending until committed")
+	for frame in 10:
+		await process_frame
+	tools.commit()
+	var eaten := studio.renderer.structure.cell_count()
+	check(eaten < 1729 and studio.hud._count.text == studio.hud._format_count(eaten), "Commit rebuilds and updates the HUD")
+	check(studio.renderer.position == origin, "Edits keep the build in place")
+	studio.set_scoop_tilt(Vector2i(45, 0))
+	check(studio.hud.tools._tilt_buttons[0][2].button_pressed and studio.hud.tools._tilt_buttons[1][1].button_pressed, "Tilt shows in the palette")
+	studio.select_tool(StructureTools.Tool.SCOOP)
+	var axis := tools.scoop_axis()
+	check(is_equal_approx(axis.angle_to(Vector3.UP), PI / 4.0), "Tilted scoop leans 45°")
+	tools.apply(Vector3(3, top.y - 0.75, 3), axis)
+	tools.commit()
+	check(studio.renderer.structure.cell_count() < eaten, "Scoop shaves cells")
+	var before := studio.renderer.structure.cell_count()
+	studio.set_brush_radius(1.5)
+	studio.hud.tools.tool_buttons[StructureTools.Tool.BRUSH_IN].pressed.emit()
+	tools.apply(top + Vector3.DOWN * 2.0, Vector3.UP, Vector3.UP)
+	check(tools.editor.cell_count() > before, "Brush adds attracted cells")
+	# Pending edits commit by themselves once the stroke goes idle.
+	await create_timer(StructureTools.COMMIT_DELAY + 0.4).timeout
+	check(studio.renderer.structure.cell_count() > before, "Idle edits commit automatically")
+	check(tools._pending.multimesh.instance_count == 0, "Committed cells leave the pending layer")
+	tools.apply(top, Vector3.UP, Vector3.UP)
+	studio.replay()
+	check(not tools.editor.has_changes() and studio.renderer.timeline.is_running(), "Replay includes pending edits")
+	tools.apply(top, Vector3.UP, Vector3.UP)
+	studio.select_preset(StructurePresets.Shape.CUBE)
+	check(studio.renderer.structure.cell_count() == 1729 and tools.editor == null, "Switching builds discards pending edits")
+	studio.select_tool(StructureTools.Tool.NAVIGATE)
+	studio.set_scoop_tilt(Vector2i.ZERO)
 
 func _capture(name: String) -> void:
 	await RenderingServer.frame_post_draw

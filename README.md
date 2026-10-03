@@ -4,10 +4,11 @@ A class-based Godot 4 project for assembling structures from regular truncated o
 
 ## Run
 
-Open `project.godot` in Godot 4.4 or newer and press **F5**, or double-click **Launch Octa.command** on macOS. The window defaults to **1760 × 1100** (16:10) and shrinks to fit smaller displays. The view panel shows live FPS and frame time.
+Open `project.godot` in Godot 4.4 or newer and press **F5**, or double-click **Launch Octa.command** on macOS. The window is **1900 × 1000 points**, rendered at the display's scale (3800 × 2000 pixels on a 2× Retina/HiDPI screen, with the UI scaled to match), and shrinks to fit smaller displays. The view panel shows live FPS and frame time.
 
 ```sh
-godot --path .
+bin/run                          # or: godot --path .
+bin/run --resolution 1440x900    # extra arguments go to Godot
 ```
 
 Tested with Godot **4.7.2**. No addons, external packages, or C# runtime are required. Go **1.22+** is needed only to regenerate builds; the viewer uses the checked-in `.octa` files.
@@ -16,7 +17,7 @@ Tested with Godot **4.7.2**. No addons, external packages, or C# runtime are req
 
 | Guide | Contents |
 | --- | --- |
-| [Architecture and classes](docs/architecture.md) | Repository map, all 16 GDScript classes, data flow, rendering, workers, shaders and worlds |
+| [Architecture and classes](docs/architecture.md) | Repository map, all 20 GDScript classes, data flow, rendering, workers, shaders and worlds |
 | [Development workflow](docs/development.md) | Setup, tests, capture/benchmark options, export and extension recipes |
 | [Go generator](gen/README.md) | CLI, density, geometry/grid APIs, component catalog and adding scenes |
 | [OCTA format](docs/octa-format.md) | Binary layouts, validation and cross-language compatibility |
@@ -37,6 +38,13 @@ Tested with Godot **4.7.2**. No addons, external packages, or C# runtime are req
 | Auto orbit | Slowly rotate the view |
 | Cell separation | Reveal individual cells; zero gives exact face-to-face tiling |
 | Save / Load | Write or open a compact `.octa` arrangement |
+| Orbit / **V** or **Esc** | Navigation only: left drag orbits |
+| Brush in / **B** | Paint cells in: new cells fly in and snap to the cells under the brush (or rest on the ground) and adopt their neighbors' color |
+| Black hole / **E** | A globe that swallows every cell within its radius |
+| Scoop / **S** | A half globe that shaves the surface about one layer deep; its cut plane is fixed per stroke so dragging planes the build |
+| **←/→**, **↑/↓** | Tilt the scoop 45° around the screen X / Y axes (flat by default) |
+| **[** / **]** or Brush size | Shrink / grow the brush (0.6–12 cells) |
+| Right drag, or Alt + drag | Orbit while a tool is active |
 
 ## The cell is the unit of data
 
@@ -143,6 +151,8 @@ A background task starts when a structure is displayed and finds cells whose 14 
 `WorldTheme` defines each world (sky colors, sun, clouds, horizon silhouette, ground or water, light and ambient). The generated worlds share warm late-afternoon lighting with per-world overrides. `StudioEnvironment.apply_theme()` switches them; file titles select themes through snake case, unknown titles fall back to studio, and presets always use the dark studio. The sky is a static procedural shader (`shaders/sky.gdshader`) without a time dependency, so it does not animate its radiance every frame.
 
 The solid and X-ray materials share `shaders/cell_common.gdshaderinc`. The X-ray material is additive and unshaded with no depth writes, so interiors show through; lines and vertex dots fade with screen-space density so distant views don't saturate.
+
+Brush edits are pending while you paint: swallowed cells are hidden in the full buffer and new cells are drawn by an overlay. About a second after a stroke (or before Save/Replay), `OctaEditor.build()` compacts them into a new structure that replaces the old one in place, without recentering or replaying. Survivors keep their assembly order and added cells follow. Switching builds discards pending edits.
 
 Geometry, storage, rendering, presets, UI, and camera are separate `class_name` classes under `scripts/`. The entry scene is `scenes/main.tscn`; `OctaStudio` connects their signals. Cell separation and display recentering do not change the saved coordinates.
 

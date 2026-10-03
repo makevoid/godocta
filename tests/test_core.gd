@@ -12,6 +12,7 @@ func _initialize() -> void:
 	_test_timeline()
 	_test_files()
 	_test_colors()
+	_test_editor()
 	_test_generated_builds()
 	print("Core checks: %d passed, %d failed." % [checks - failures, failures])
 	quit(1 if failures else 0)
@@ -221,6 +222,83 @@ func _test_colors() -> void:
 		file.close()
 		check(codec.load_structure(TEMP_FILE) == null, "Reject colored file with bad %s" % mutation)
 	DirAccess.remove_absolute(TEMP_FILE)
+
+## Brush-tool editing: nearest-cell lookup, picking, erasing regions and attached growth.
+func _test_editor() -> void:
+	for cell in [Vector3i.ZERO, Vector3i(1, 1, 1), Vector3i(-3, 5, -1), Vector3i(4, -2, 6)]:
+		for jitter in [Vector3.ZERO, Vector3(0.48, 0, 0), Vector3(0, -0.48, 0), Vector3(0.24, 0.24, -0.24), Vector3(-0.2, 0.15, 0.1)]:
+			check(OctaLattice.nearest(OctaLattice.to_world(cell, 0.8) + jitter * 0.8, 0.8) == cell, "Point near %s lies in that cell" % cell)
+	var cube := StructurePresets.generate(StructurePresets.Shape.CUBE)
+	var editor := OctaEditor.new(cube)
+	check(editor.cell_count() == 1729 and not editor.has_changes(), "Editor starts from the structure")
+	check(is_equal_approx(editor.ground_height(), cube.bounds().position.y), "Ground plane under the bottom layer")
+	var hit := editor.pick(Vector3(0.1, 30, 0.2), Vector3.DOWN)
+	check(hit.get("hit", false) and hit.cell.y >= 8 and hit.point.y <= 5.01 and hit.point.y > 3.9, "Ray picks the top layer")
+	var floor_hit := editor.pick(Vector3(30, 20, 0), Vector3(0, -1, 0))
+	check(not floor_hit.get("hit", true) and is_equal_approx(floor_hit.point.y, editor.ground_height()), "Ray beside the build reaches the ground")
+	check(editor.pick(Vector3(30, 20, 0), Vector3.UP).is_empty(), "Ray into the sky misses")
+	var top: Vector3 = hit.point
+	var ball := editor.cells_within(top, 2.0)
+	var half := editor.cells_within(top - Vector3.UP * 0.75, 2.0, Vector3.UP)
+	check(not half.is_empty() and half.size() < ball.size(), "Scoop takes a shallow bite of the globe")
+	var shallow := true
+	for cell in half:
+		shallow = shallow and OctaLattice.to_world(cell).y >= top.y - 0.75
+	check(shallow, "Scoop stays above its cut plane")
+	var tilted := editor.cells_within(top - Vector3.UP * 0.75, 2.0, Vector3(1, 1, 0).normalized())
+	check(not tilted.is_empty() and tilted != half, "Tilted scoop takes a different bite")
+	for cell in ball:
+		check(editor.remove(cell), "Remove %s" % cell)
+	check(not editor.remove(ball[0]) and editor.original_index(ball[0]) == -1, "Removed cells stay removed")
+	check(editor.cell_count() == 1729 - ball.size() and editor.has_changes(), "Removal count")
+	var slots := editor.free_slots(top, 1.5, 6)
+	check(slots.size() == 6, "Brush finds attached slots")
+	var attached := true
+	var last_distance := 0.0
+	for slot in slots:
+		var touching := false
+		for offset in OctaLattice.NEIGHBORS:
+			touching = touching or editor.contains(slot + offset)
+		var distance := OctaLattice.to_world(slot).distance_to(top)
+		attached = attached and touching and not editor.contains(slot) and distance >= last_distance - 1e-4
+		last_distance = distance
+	check(attached, "Slots touch existing cells, nearest first")
+	check(editor.add(slots[0]) and editor.contains(slots[0]) and editor.original_index(slots[0]) == -1, "Add a cell")
+	check(not editor.add(slots[0]), "No duplicate additions")
+	check(editor.remove(slots[0]) and not editor.contains(slots[0]), "Remove an added cell")
+	editor.add(slots[1])
+	editor.add(slots[0])
+	var edited := editor.build()
+	check(edited != null and edited.cell_count() == 1729 - ball.size() + 2, "Edited structure count")
+	if edited != null:
+		check(edited.coordinate(0) == cube.coordinate(0), "Survivors keep their order")
+		check(edited.coordinate(edited.cell_count() - 2) == slots[1] and edited.coordinate(edited.cell_count() - 1) == slots[0], "Additions follow in order")
+		check(not edited.is_colored(), "Uncolored builds stay uncolored")
+	var painted := OctaStructure.from_cells(PackedInt32Array([0, 0, 0, 2, 0, 0, 1, 1, 1]), "Painted")
+	painted.set_colors(PackedByteArray([0, 1, 0]), PackedColorArray([Color.RED, Color.BLUE]))
+	var paint_editor := OctaEditor.new(painted)
+	check(paint_editor.color_for(Vector3i(4, 0, 0)) == 1, "New cells adopt their neighbor's color")
+	check(paint_editor.color_for(Vector3i(20, 0, 0), 1) == 1, "Unattached cells use the fallback color")
+	paint_editor.add(Vector3i(4, 0, 0), paint_editor.color_for(Vector3i(4, 0, 0)))
+	paint_editor.remove(Vector3i(1, 1, 1))
+	var repainted := paint_editor.build()
+	check(repainted.is_colored() and repainted.cell_count() == 3 and repainted.color_index(2) == 1 \
+		and repainted.coordinate(2) == Vector3i(4, 0, 0) and repainted.color_index(1) == 1, "Colors follow edits")
+	var empty := OctaEditor.new(OctaStructure.from_cells(PackedInt32Array()))
+	var ground := empty.free_slots(Vector3(0, empty.ground_height(), 0), 1.2, 50)
+	var on_floor := not ground.is_empty()
+	for slot in ground:
+		on_floor = on_floor and slot.y == empty.ground_layer
+	check(on_floor and is_zero_approx(empty.ground_height()), "Empty builds grow from the floor")
+	var castle := OctaFile.new().load_structure("res://structures/castle.octa")
+	if castle != null:
+		var started := Time.get_ticks_msec()
+		var castle_editor := OctaEditor.new(castle)
+		var indexed := Time.get_ticks_msec()
+		castle_editor.remove(castle.coordinate(castle.cell_count() - 1))
+		var rebuilt := castle_editor.build()
+		check(rebuilt != null and rebuilt.cell_count() == castle.cell_count() - 1 and rebuilt.is_colored(), "Large build edit")
+		print("Castle editor: index %d ms, build %d ms" % [indexed - started, Time.get_ticks_msec() - indexed])
 
 ## The Go generator's output (gen/, `go run ./cmd/octagen`) must load and be colored.
 func _test_generated_builds() -> void:

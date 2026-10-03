@@ -8,10 +8,10 @@ config/features=PackedStringArray("4.4", "GL Compatibility")
 config/icon="res://assets/octa.svg"
 
 [display]
-window/size/viewport_width=1760
-window/size/viewport_height=1100
-window/size/window_width_override=1760
-window/size/window_height_override=1100
+window/size/viewport_width=1900
+window/size/viewport_height=1000
+window/size/window_width_override=1900
+window/size/window_height_override=1000
 window/size/min_width=1100
 window/size/min_height=720
 window/stretch/mode="canvas_items"

@@ -6,6 +6,7 @@ signal orbit_changed(enabled: bool)
 signal gap_changed(value: float)
 signal xray_changed(enabled: bool)
 var toolbar: StructureToolbar
+var tools: ToolPalette
 var _title: Label
 var _subtitle: Label
 var _number: Label
@@ -105,13 +106,20 @@ func _build_unit_card(root: Control) -> void:
 	column.add_child(StudioTheme.label("6 squares  +  8 hexagons", 13, StudioTheme.MUTED))
 
 func _build_view_controls(root: Control) -> void:
+	# View settings and the editing tools stack down the right edge.
+	var column := VBoxContainer.new()
+	column.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	column.offset_left = -250
+	column.offset_right = -18
+	column.offset_top = 112
+	column.add_theme_constant_override("separation", 12)
+	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(column)
 	var card := PanelContainer.new()
-	card.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	card.offset_left = -250
-	card.offset_right = -18
-	card.offset_top = 112
 	card.add_theme_stylebox_override("panel", StudioTheme.panel(Color(0.04, 0.06, 0.07, 0.72), Color(1, 1, 1, 0.06), 14))
-	root.add_child(card)
+	column.add_child(card)
+	tools = ToolPalette.new()
+	column.add_child(tools)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 12)
 	card.add_child(box)
@@ -184,8 +192,8 @@ func _build_footer(root: Control) -> void:
 	row.add_child(spacer)
 	var help := VBoxContainer.new()
 	help.alignment = BoxContainer.ALIGNMENT_CENTER
-	help.add_child(StudioTheme.label("Drag to orbit   ·   Scroll to zoom   ·   Shift + drag to pan", 13, StudioTheme.MUTED))
-	help.add_child(StudioTheme.label("1–4  Primitives     5–9  Builds     X  X-ray     R  Replay     F  Reset view", 11, StudioTheme.MUTED))
+	help.add_child(StudioTheme.label("Drag to orbit (right drag with a tool)   ·   Scroll to zoom   ·   Shift + drag to pan", 13, StudioTheme.MUTED))
+	help.add_child(StudioTheme.label("1–4  Primitives   5–9  Builds   X  X-ray   R  Replay   F  Reset view   V B E S  Tools   [ ]  Brush size", 11, StudioTheme.MUTED))
 	row.add_child(help)
 
 func show_structure(structure: OctaStructure, preset: int = -1) -> void:
@@ -203,6 +211,11 @@ func show_structure(structure: OctaStructure, preset: int = -1) -> void:
 	_count.text = _format_count(structure.cell_count())
 	_memory.text = "%.1f KiB" % (structure.storage_bytes() / 1024.0)
 	toolbar.select_shape(preset)
+
+## Refresh the counters after an edit, keeping the title and description.
+func show_counts(structure: OctaStructure) -> void:
+	_count.text = _format_count(structure.cell_count())
+	_memory.text = "%.1f KiB" % (structure.storage_bytes() / 1024.0)
 
 func show_progress(fraction: float, duration: float) -> void:
 	_progress.value = fraction

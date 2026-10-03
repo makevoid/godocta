@@ -3,7 +3,7 @@ extends MultiMeshInstance3D
 ## One render node and one shared mesh, regardless of the cell count.
 ## The 64-byte per-instance GPU buffer is derived from the compact structure.
 ## Once a solid build has settled, only its surface cells are drawn: a background task
-## drops every cell whose 14 neighbors are all occupied. Assembly and X-ray use all cells.
+## drops every cell whose 14 neighbors are all occupied. Assembly, X-ray and editing use all cells.
 
 signal assembly_progress(fraction: float, duration: float)
 signal assembly_finished
@@ -20,6 +20,10 @@ var full_multimesh: MultiMesh
 var surface_multimesh: MultiMesh
 var _generation: int = 0
 var _tasks: Dictionary = {} # generation → WorkerThreadPool task id
+## Heights are normalized within this box; display(recenter = false) keeps the previous one.
+var _height_box: AABB
+## Brush tools hide cells in the full buffer, so it stays on screen while editing.
+var _editing: bool = false
 const SURFACE_MAX_GAP := 0.1 # Wider gaps would let hidden interiors show through.
 
 func _init() -> void:
@@ -28,7 +32,9 @@ func _init() -> void:
 	material_override = _solid
 	set_process(false)
 
-func display(data: OctaStructure, animate: bool = true) -> void:
+## recenter = false keeps the node's position and height shading, so an edited
+## structure replaces the previous one without moving.
+func display(data: OctaStructure, animate: bool = true, recenter: bool = true) -> void:
 	structure = data
 	timeline.configure(data.cell_count())
 	_set_parameter("release_window", timeline.release_window)
@@ -42,7 +48,9 @@ func display(data: OctaStructure, animate: bool = true) -> void:
 	# Big builds drop cells from proportionally higher so the motion stays visible.
 	_set_parameter("flight_scale", clampf(pow(box.get_longest_axis_size() / 10.0, 0.25), 1.0, 2.0))
 	# Recenter for inspection while preserving original file coordinates.
-	position = Vector3(-box.get_center().x, -box.position.y + 0.06, -box.get_center().z)
+	if recenter:
+		position = Vector3(-box.get_center().x, -box.position.y + 0.06, -box.get_center().z)
+		_height_box = box
 	var buffer := PackedFloat32Array()
 	buffer.resize(data.cell_count() * 16)
 	for index in data.cell_count():
@@ -56,7 +64,7 @@ func display(data: OctaStructure, animate: bool = true) -> void:
 		buffer[offset + 11] = center.z
 		buffer[offset + 12] = float(index) / maxf(data.cell_count() - 1, 1.0)
 		buffer[offset + 13] = fposmod(float(index) * 0.61803398875, 1.0)
-		buffer[offset + 14] = (center.y - box.position.y) / maxf(box.size.y, 0.001)
+		buffer[offset + 14] = normalized_height(center.y)
 		buffer[offset + 15] = float(data.color_index(index))
 	instances.buffer = buffer
 	# File colors are sRGB; shading happens in linear space.
@@ -94,7 +102,7 @@ func drawn_count() -> int:
 	return multimesh.instance_count if multimesh != null else 0
 
 func _refresh_instances() -> void:
-	var settled := not timeline.is_running() and not xray and _gap <= SURFACE_MAX_GAP
+	var settled := not timeline.is_running() and not xray and not _editing and _gap <= SURFACE_MAX_GAP
 	var target := surface_multimesh if settled and surface_multimesh != null else full_multimesh
 	if multimesh != target:
 		multimesh = target
@@ -133,6 +141,23 @@ func _exit_tree() -> void:
 	for task in _tasks.values():
 		WorkerThreadPool.wait_for_task_completion(task)
 	_tasks.clear()
+
+## Custom-data height (0 at the bottom, 1 at the top) for a structure-space Y.
+func normalized_height(y: float) -> float:
+	return clampf((y - _height_box.position.y) / maxf(_height_box.size.y, 0.001), 0.0, 1.0)
+
+## While editing, every cell stays drawn so hidden cells cannot reveal a hollow surface.
+## Starting an edit finishes any running assembly.
+func set_editing(enabled: bool) -> void:
+	_editing = enabled
+	if enabled and timeline.is_running():
+		seek(1.0)
+	_refresh_instances()
+
+## Collapse one cell of the full buffer to nothing until the next display().
+func hide_cell(index: int) -> void:
+	if full_multimesh != null and index < full_multimesh.instance_count:
+		full_multimesh.set_instance_transform(index, Transform3D(Basis.from_scale(Vector3.ZERO), Vector3.ZERO))
 
 ## Jump the assembly clock, e.g. to inspect or capture a partial build.
 func seek(fraction: float) -> void:

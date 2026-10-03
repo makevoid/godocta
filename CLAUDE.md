@@ -26,7 +26,7 @@ Run from the repository root unless stated otherwise. The project declares Godot
 4.4 compatibility and has been tested with 4.7.2. `gen/go.mod` requires Go 1.22+.
 
 ```sh
-godot --path .
+bin/run        # launches the app (foreground window): ask the user to run it
 
 # Refresh imports/global class registration, especially after adding or renaming scripts.
 godot --headless --path . --editor --import --quit
@@ -73,8 +73,10 @@ use `--bench` for forced draws plus GPU readback, rather than the HUD FPS counte
 - `scripts/rendering/`: `StructureRenderer` derives instance buffers;
   `AssemblyTimeline` owns timing; `OrbitCamera` owns navigation; `WorldTheme`
   supplies dictionaries consumed by `StudioEnvironment`.
-- `scripts/ui/`: `StudioHUD` presents state and emits intent; `StructureToolbar`
-  owns preset buttons and the file gallery; `StudioTheme` builds control styles;
+- `scripts/tools/`: `StructureTools` owns brush input, pending edits and commits through
+  `OctaEditor` (`scripts/data/`); `BrushGizmo` draws the globe/dome and black hole.
+- `scripts/ui/`: `StudioHUD` presents state and emits intent; `ToolPalette` selects
+  tools; `StructureToolbar` owns preset buttons and the file gallery; `StudioTheme` builds control styles;
   `UnitGlyph` draws a diagram from the actual unit vertices.
 - `gen/`: `octa` supplies geometry, colored grids, ordering, and codecs; `kit`
   supplies reusable components; `scenes` composes registered recipes;

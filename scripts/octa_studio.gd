@@ -5,6 +5,7 @@ extends Node3D
 var renderer := StructureRenderer.new()
 var camera := OrbitCamera.new()
 var hud := StudioHUD.new()
+var tools := StructureTools.new()
 var environment: StudioEnvironment
 var _files := OctaFile.new()
 var _save_dialog: FileDialog
@@ -15,11 +16,16 @@ func _ready() -> void:
 	add_child(environment)
 	add_child(renderer)
 	add_child(camera)
+	# After the camera: unhandled input reaches later nodes first, so a brush stroke
+	# consumes the left drag before the camera can orbit with it.
+	tools.renderer = renderer
+	tools.camera = camera
+	add_child(tools)
 	add_child(hud)
 	camera.current = true
 	hud.toolbar.shape_selected.connect(select_preset)
 	hud.toolbar.file_selected.connect(_load_structure)
-	hud.toolbar.replay_requested.connect(renderer.replay)
+	hud.toolbar.replay_requested.connect(replay)
 	hud.toolbar.save_requested.connect(_choose_save)
 	hud.toolbar.load_requested.connect(_choose_load)
 	hud.reset_view_requested.connect(camera.reset_view)
@@ -27,6 +33,10 @@ func _ready() -> void:
 	hud.gap_changed.connect(renderer.set_gap)
 	hud.xray_changed.connect(renderer.set_xray)
 	renderer.assembly_progress.connect(hud.show_progress)
+	hud.tools.tool_selected.connect(select_tool)
+	hud.tools.radius_changed.connect(set_brush_radius)
+	hud.tools.tilt_changed.connect(set_scoop_tilt)
+	tools.committed.connect(hud.show_counts)
 	_save_dialog = _make_dialog(FileDialog.FILE_MODE_SAVE_FILE)
 	_save_dialog.file_selected.connect(_save_structure)
 	_load_dialog = _make_dialog(FileDialog.FILE_MODE_OPEN_FILE)
@@ -39,6 +49,7 @@ func select_preset(shape: StructurePresets.Shape) -> void:
 	_present(structure, shape)
 
 func _present(structure: OctaStructure, preset: int = -1) -> void:
+	tools.reset()
 	hud.show_structure(structure, preset)
 	renderer.display(structure)
 	var box := structure.bounds()
@@ -47,19 +58,43 @@ func _present(structure: OctaStructure, preset: int = -1) -> void:
 	camera.frame_structure(box)
 	environment.fit(box)
 
-## The default 16:10 window is 1760 × 1100; shrink it to fit smaller displays unless an
-## explicit --resolution was requested.
+## The window is 1900 × 1000 points: on a 2× (Retina/HiDPI) display that is 3800 × 2000
+## pixels, and the canvas_items stretch scales the UI (laid out at 1900 × 1000) to match.
+## It shrinks to fit smaller displays; an explicit --resolution (pixels) is left alone.
+const WINDOW_POINTS := Vector2(1900, 1000)
+const TITLE_BAR_POINTS := 32.0
+
 func _fit_window_to_screen() -> void:
 	var window := get_window()
 	if window.mode != Window.MODE_WINDOWED or OS.get_cmdline_args().has("--resolution"):
 		return
-	var usable := DisplayServer.screen_get_usable_rect(window.current_screen)
+	var screen := window.current_screen
+	var usable := DisplayServer.screen_get_usable_rect(screen)
 	if usable.size.x <= 0 or usable.size.y <= 0:
 		return
-	var scale := minf(usable.size.x * 0.94 / window.size.x, usable.size.y * 0.94 / window.size.y)
-	if scale < 1.0:
-		window.size = Vector2i(Vector2(window.size) * scale)
-		window.position = usable.position + (usable.size - window.size) / 2
+	var scale := maxf(DisplayServer.screen_get_scale(screen), 1.0)
+	var target := WINDOW_POINTS * scale
+	var room := Vector2(usable.size) - Vector2(0.0, TITLE_BAR_POINTS * scale)
+	var fit := minf(1.0, minf(room.x / target.x, room.y / target.y))
+	window.size = Vector2i(target * fit)
+	window.position = usable.position + (usable.size - window.size) / 2
+
+## Replays the current arrangement, including pending brush edits.
+func replay() -> void:
+	tools.commit()
+	renderer.replay()
+
+func select_tool(tool: StructureTools.Tool) -> void:
+	tools.set_tool(tool)
+	hud.tools.show_tool(tool)
+
+func set_brush_radius(cells: float) -> void:
+	tools.set_radius(cells)
+	hud.tools.show_radius(tools.radius)
+
+func set_scoop_tilt(tilt: Vector2i) -> void:
+	tools.tilt = tilt.clamp(Vector2i(-45, -45), Vector2i(45, 45))
+	hud.tools.show_tilt(tools.tilt)
 
 func toggle_xray() -> void:
 	renderer.set_xray(not renderer.xray)
@@ -81,9 +116,23 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		KEY_X:
 			toggle_xray()
 		KEY_R, KEY_SPACE:
-			renderer.replay()
+			replay()
 		KEY_F:
 			camera.reset_view()
+		KEY_V, KEY_ESCAPE:
+			select_tool(StructureTools.Tool.NAVIGATE)
+		KEY_B:
+			select_tool(StructureTools.Tool.BRUSH_IN)
+		KEY_E:
+			select_tool(StructureTools.Tool.BLACK_HOLE)
+		KEY_S:
+			select_tool(StructureTools.Tool.SCOOP)
+		KEY_BRACKETLEFT, KEY_BRACKETRIGHT:
+			set_brush_radius(tools.radius * (0.8 if event.physical_keycode == KEY_BRACKETLEFT else 1.25))
+		KEY_LEFT, KEY_RIGHT:
+			set_scoop_tilt(tools.tilt + Vector2i(-45 if event.physical_keycode == KEY_LEFT else 45, 0))
+		KEY_UP, KEY_DOWN:
+			set_scoop_tilt(tools.tilt + Vector2i(0, 45 if event.physical_keycode == KEY_DOWN else -45))
 
 func _make_dialog(mode: FileDialog.FileMode) -> FileDialog:
 	var dialog := FileDialog.new()
@@ -97,6 +146,7 @@ func _make_dialog(mode: FileDialog.FileMode) -> FileDialog:
 	return dialog
 
 func _choose_save() -> void:
+	tools.commit()
 	_save_dialog.current_file = renderer.structure.title.to_snake_case() + ".octa"
 	_save_dialog.popup_centered(Vector2i(850, 560))
 
