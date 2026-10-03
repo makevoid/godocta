@@ -37,7 +37,7 @@ func _ready() -> void:
 	add_child(_fill)
 	_ground_mesh = MeshInstance3D.new()
 	var plane := PlaneMesh.new()
-	plane.size = Vector2(4000, 4000)
+	plane.size = Vector2(40000, 40000) # Its edge sits just under the true horizon.
 	_ground_mesh.mesh = plane
 	_ground = ShaderMaterial.new()
 	_ground.shader = preload("res://shaders/ground.gdshader")
@@ -66,6 +66,7 @@ func apply_theme(name: String) -> void:
 	_sky.set_shader_parameter("silhouette_seed", t.get("silhouette_seed", 0.0))
 	_sky.set_shader_parameter("haze", t.get("haze", 0.4))
 	_sky.set_shader_parameter("stars", t.get("stars", 0.0))
+	_sky.set_shader_parameter("city_lights", t.get("city_lights", 0.0))
 	_ground.set_shader_parameter("ground_color", t.ground)
 	_ground.set_shader_parameter("far_color", t.below)
 	_ground.set_shader_parameter("grid_strength", t.get("grid", 0.0))
@@ -75,6 +76,8 @@ func apply_theme(name: String) -> void:
 	_ground_mesh.position.y = t.get("water_level", 0.0)
 	_key.light_color = t.sun
 	_key.light_energy = t.sun_energy
+	_key.shadow_opacity = t.get("shadow_opacity", 1.0)
+	_key.shadow_blur = t.get("shadow_blur", 1.0)
 	_key.rotation_degrees = Vector3(-t.elevation, t.azimuth, 0)
 	_fill.light_color = t.fill
 	_fill.light_energy = t.fill_energy

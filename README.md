@@ -10,12 +10,24 @@ Open `project.godot` in Godot 4.4 or newer and press **F5**, or double-click **L
 godot --path .
 ```
 
-Tested with Godot **4.7.2**. No addons, external packages, or C# runtime are required.
+Tested with Godot **4.7.2**. No addons, external packages, or C# runtime are required. Go **1.22+** is needed only to regenerate builds; the viewer uses the checked-in `.octa` files.
+
+## Documentation
+
+| Guide | Contents |
+| --- | --- |
+| [Architecture and classes](docs/architecture.md) | Repository map, all 16 GDScript classes, data flow, rendering, workers, shaders and worlds |
+| [Development workflow](docs/development.md) | Setup, tests, capture/benchmark options, export and extension recipes |
+| [Go generator](gen/README.md) | CLI, density, geometry/grid APIs, component catalog and adding scenes |
+| [OCTA format](docs/octa-format.md) | Binary layouts, validation and cross-language compatibility |
+| [Agent guidance](CLAUDE.md) | Shared project instructions; `AGENTS.md` links to this file |
+
+## Controls
 
 | Control | Action |
 | --- | --- |
 | Cube / Sphere / Pyramid / Cylinder, or **1–4** | Assemble a preset |
-| Builds ▾, or **5–9** | Assemble a generated structure from `structures/` |
+| Builds ▾, or **5–9** | Open a `.octa` file from `structures/`; shortcuts select the first five alphabetically |
 | X-ray view / **X** | Semi-transparent view: faint faces, bright edges, every vertex visible |
 | Replay, **R**, or **Space** | Restart the current arrangement |
 | Drag | Orbit |
@@ -53,14 +65,15 @@ For `cell_span = 1`, the unit has vertices at the permutations of `(0, ±1, ±2)
 
 ```sh
 cd gen
+go vet -composites=false ./...
 go test ./...
 go run ./cmd/octagen            # all scenes → ../structures/*.octa
 go run ./cmd/octagen -list      # list registered scenes
 go run ./cmd/octagen castle     # one scene
-go run ./cmd/octagen -density 8 # 2× linear resolution again (≈4× the cells)
+go run ./cmd/octagen -out /tmp/octa-builds -density 8 # 2× span-1 resolution (≈4× default cells)
 ```
 
-`-density` is cells per cubic unit (default 2, so cells are ∛½ ≈ 0.79 units across). Scenes are authored in world units, so density changes only the detail, not the size.
+`-density` multiplies cell density relative to span 1: `span = cbrt(1 / density)`. The default 2 gives cells ∛½ ≈ 0.79 units across. Since a span-1 cell has volume 0.5, bulk density is `2 × density` cells per cubic world unit. Scenes are authored in fixed world units; resolution changes boundary detail and may slightly shift the cell envelope. Put CLI flags before scene names. See the [generator guide](gen/README.md) for sampling rules and examples.
 
 | Build | Cells | Assembly |
 | --- | ---: | ---: |
@@ -70,13 +83,13 @@ go run ./cmd/octagen -density 8 # 2× linear resolution again (≈4× the cells)
 | Manhattan | 98,511 | 15.4 s |
 | Medieval tower | 34,374 | 10.8 s |
 
-The toolkit has three layers:
+The table describes the checked-in builds at default density. The toolkit has three layers:
 
 - **`octa`**: lattice math, `Solid` primitives (cuboid, cylinder, frustum/cone, ellipsoid, prism, gable and hip roofs, arch, capsule, arbitrary `Func`) with CSG (`Union`, `Subtract`, `Intersect`, `Translate`, `RotateY`, `Sheared`), a `Grid` of colored cells, assembly `Order`s (`Sweep`, `Along`, `Outward`; layers always rise bottom-up) and the OCTA reader/writer.
 - **`kit`**: reusable components with plain-struct configuration: battlements, walls, towers, turrets, keep, hall, gatehouse, moat, setback buildings with window bands and crowns, a twisting tower, a wedge, trees and a suspension bridge.
 - **`scenes`**: registered compositions. Add a type with `Name`, `Title` and `Build(g *Grid) Order`, call `Register` in `init`, and `octagen` picks it up.
 
-Colors come from a fixed 16-color palette (`octa.Palette`). `grid.Use(color)` sets the brush for subsequent fills, `grid.With(color, fn)` scopes it, and `grid.Paint(color, solids...)` recolors existing cells. Components take accents such as `RoofColor` or `Windows`, where zero selects the component's default.
+Colors come from a fixed 16-color palette (`octa.Palette`). `grid.Use(color)` sets the brush for subsequent fills, `grid.With(color, fn)` scopes it, and `grid.Paint(color, solids...)` recolors existing cells. Zero-valued accent fields such as `RoofColor` select a component's default; zero-valued building `Windows` fields disable glazing.
 
 ```go
 g := octa.NewGrid()
@@ -117,7 +130,7 @@ var restored := files.load_structure("user://neighbors.octa")
 renderer.display(restored)
 ```
 
-Invalid parity, duplicate cells, invalid spans, and malformed payloads are rejected. `from_cells()` returns `null` for invalid input; `OctaStructure.validation_error()` explains why. `OctaFile.last_error` explains save/load failures. Discard the builder after compiling an arrangement to release its temporary occupancy dictionary. A structure can contain up to 1,000,000 cells. This cap bounds loading; it is not a performance guarantee on every GPU.
+Invalid parity, duplicate cells, invalid spans, and malformed payloads are rejected. `from_cells()` returns `null` for invalid input; `OctaStructure.validation_error()` explains why. `OctaFile.last_error` explains save/load failures. Discard the builder after compiling an arrangement to release its temporary occupancy dictionary; `build()` itself does not clear it. Finish metadata and color edits before display, and treat displayed structures as read-only while the renderer's worker uses them. A structure can contain up to 1,000,000 cells. This cap bounds accepted data; it is not a performance guarantee on every GPU.
 
 ### Rendering and animation
 
@@ -125,15 +138,15 @@ Invalid parity, duplicate cells, invalid spans, and malformed payloads are rejec
 
 A single material uniform advances the animation clock. `AssemblyTimeline.duration_for(cells)` is `clamp(4 × ∛(cells / 1729), 4, 24)` seconds. Instance rank determines its release time over the release window; each cell settles using cubic ease-out over about 1.2 seconds (slightly longer for big builds), and the last cell settles exactly at the end. Big builds drop cells from proportionally higher so the motion stays visible. Completed assemblies stop requesting per-frame render updates. Switching shapes replaces the arrangement and resets that clock; replay reuses the current buffer.
 
-Once an assembly settles in solid view, a background task drops every cell whose 14 neighbors are all occupied, so only the surface is drawn (about 25–30% fewer instances on the castle and tower). Assembly, X-ray and wide cell separation draw every cell.
+A background task starts when a structure is displayed and finds cells whose 14 neighbors are all occupied. Once an assembly settles in solid view with separation at or below 0.1, the renderer uses the resulting surface buffer when ready. Assembly, X-ray and wider separation draw every cell. The full dataset remains available for saving and replay.
 
-`WorldTheme` defines each world (sky colors, sun, clouds, horizon silhouette, ground or water, light and ambient). `StudioEnvironment.apply_theme()` switches it; builds pick theirs by title, and presets use the dark studio. The sky is a static procedural shader (`shaders/sky.gdshader`), so its radiance is only recomputed when the theme changes.
+`WorldTheme` defines each world (sky colors, sun, clouds, horizon silhouette, ground or water, light and ambient). The generated worlds share warm late-afternoon lighting with per-world overrides. `StudioEnvironment.apply_theme()` switches them; file titles select themes through snake case, unknown titles fall back to studio, and presets always use the dark studio. The sky is a static procedural shader (`shaders/sky.gdshader`) without a time dependency, so it does not animate its radiance every frame.
 
 The solid and X-ray materials share `shaders/cell_common.gdshaderinc`. The X-ray material is additive and unshaded with no depth writes, so interiors show through; lines and vertex dots fade with screen-space density so distant views don't saturate.
 
 Geometry, storage, rendering, presets, UI, and camera are separate `class_name` classes under `scripts/`. The entry scene is `scenes/main.tscn`; `OctaStudio` connects their signals. Cell separation and display recentering do not change the saved coordinates.
 
-For much larger worlds, partition structures into spatial chunks with one `MultiMesh` per chunk. A single `MultiMesh` is culled as a unit. The current implementation deliberately keeps the preset-scale renderer simple. See the official [MultiMesh API](https://docs.godotengine.org/en/stable/classes/class_multimesh.html).
+For much larger worlds, partition structures into spatial chunks with one `MultiMesh` per chunk. A single `MultiMesh` is culled as a unit. The current implementation uses one render node for each displayed build. See the [architecture reference](docs/architecture.md) for buffer layout, shader contracts and worker lifecycle.
 
 ## File format and checks
 
@@ -152,7 +165,7 @@ Core checks cover topology, all 14 shared faces, mesh volume/winding, lattice va
 `tools/capture.sh` renders real GPU screenshots without taking focus: on macOS it launches Godot hidden via `open -g -j` and writes PNGs to `captures/`. (`--headless` uses a dummy renderer that can't produce images.)
 
 ```sh
-tools/capture.sh                                   # all presets and builds, hero view
+tools/capture.sh                                   # all presets/gallery files; hero, front, top
 tools/capture.sh --shapes=castle,cube --views=hero,front,side,top
 tools/capture.sh --shapes=castle --modes=solid,xray
 tools/capture.sh --shapes=arena --at=0.25,0.5,0.75 # mid-assembly frames
@@ -161,6 +174,6 @@ tools/capture.sh --shapes=castle,arena --views= --bench # ms per settled frame
 
 Hidden windows are throttled, so the live FPS readout is meaningless there; `--bench` instead times forced draws with a GPU readback (a slight overestimate).
 
-Set `GODOT_APP` if Godot isn't at `/Applications/Godot.app`. The log is in `captures/capture.log`.
+Set `GODOT_APP` if Godot isn't at `/Applications/Godot.app`. The log is in `captures/capture.log`. See [development](docs/development.md) for every option, filename rules and benchmark limits.
 
-An optional Web Preview export preset is included. Place the matching engine version's `web_nothreads_debug.zip` template in `.godot/`, then run `godot --headless --path . --export-debug "Web Preview" preview/index.html`. `preview/` is a generated, ignored folder. Use the native project for local filesystem Save/Load.
+An optional Web Preview export preset is included. Place the matching engine version's `web_nothreads_debug.zip` template in `.godot/`, create `preview/`, then run `godot --headless --path . --export-debug "Web Preview" preview/index.html`. Serve the output over local HTTP as described in [development](docs/development.md). `preview/` is generated and ignored. Use the native project for local filesystem Save/Load.

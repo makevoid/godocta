@@ -41,8 +41,8 @@ void fragment() {
 	float far = smoothstep(far_start, far_end, length(p));
 	ALBEDO = near * lit * (1.0 - far);
 	EMISSION = near * (1.0 - lit) * (1.0 - far) + far_color.rgb * far;
-	ROUGHNESS = mix(0.95, 0.12, water);
-	SPECULAR = mix(0.25, 0.7, water);
+	ROUGHNESS = mix(0.95, 0.3, water);
+	SPECULAR = mix(0.25, 0.45, water);
 	if (water > 0.0) {
 		// Small static ripples so the sun and sky catch the surface.
 		// Low frequency only: fine ripples alias into grain at a distance.

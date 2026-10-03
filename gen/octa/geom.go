@@ -1,5 +1,5 @@
 // Package octa builds truncated-octahedron structures on a body-centered cubic lattice
-// and writes them as OCTA v1 files for the Godot studio.
+// and writes OCTA v1 (uncolored) or v2 (colored) files for the Godot studio.
 //
 // The pipeline is: describe shapes as Solids (CSG primitives in world units), rasterize
 // them into a Grid of lattice cells, group them into reusable Components, then compile
@@ -8,7 +8,7 @@ package octa
 
 import "math"
 
-// Vec3 is a world-space point for cell span 1. Y is up.
+// Vec3 is a world-space point. Y is up; recipe dimensions are independent of cell span.
 type Vec3 struct{ X, Y, Z float64 }
 
 func V(x, y, z float64) Vec3 { return Vec3{x, y, z} }

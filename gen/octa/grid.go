@@ -29,10 +29,11 @@ type Grid struct {
 	snap  bool
 }
 
-// NewGrid is a grid of span-1 cells: one cell per world unit.
+// NewGrid is a grid of span-1 cells: two cells per cubic world unit in a filled lattice.
 func NewGrid() *Grid { return NewGridWithSpan(1) }
 
-// NewGridWithSpan sets the cell span in world units, 0 < span ≤ 1.
+// NewGridWithSpan sets the cell span in world units without validating it.
+// Structure validates the serialized span; spans below 1 enable half-unit snapping.
 func NewGridWithSpan(span float64) *Grid {
 	return &Grid{cells: make(map[Cell]Color), span: span, snap: span < 1}
 }

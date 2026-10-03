@@ -1,6 +1,6 @@
 // Package kit holds reusable architectural Components built from octa Solids.
 // Each component is a plain struct: set its fields, then grid.Build(component).
-// Dimensions are world units for cell span 1 (one cell ≈ one unit across).
+// Dimensions are world units, independent of the grid's cell span.
 // Masonry uses the grid's current brush (grid.Use); accents such as roofs have their
 // own Color fields, where the zero value selects the component's default.
 package kit
@@ -192,10 +192,10 @@ func (k Keep) Build(g *Grid) {
 	}
 }
 
-// Hall is a hollow gabled building with a door at the +Z end.
+// Hall is a hollow gabled building with a door at the positive end of its ridge axis.
 type Hall struct {
 	Min, Max  Vec3  // Walls; the roof rises above Max.Y.
-	Ridge     Axis  // Default AxisZ.
+	Ridge     Axis  // Zero value AxisX; set AxisZ explicitly for a Z-aligned ridge.
 	RoofColor Color // Default Terracotta.
 }
 

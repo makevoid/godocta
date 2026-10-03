@@ -3,7 +3,7 @@ package octa
 import "math"
 
 // Cell is a body-centered cubic lattice coordinate. All three components share parity.
-// Its world center is (X, Y, Z) * span / 2, so one cell spans one world unit.
+// Its world center is (X, Y, Z) * span / 2; a cell's axis-aligned extent is span.
 type Cell struct{ X, Y, Z int32 }
 
 // MaxCoordinate bounds every component, matching the studio's validator.

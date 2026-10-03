@@ -155,7 +155,7 @@ func (t Tree) Build(g *Grid) {
 }
 
 // SuspensionBridge spans between two plan points: a deck, two arched stone towers
-// and catenary cables sampled into connected cell lines.
+// and parabolic suspension cables sampled into connected cell lines.
 type SuspensionBridge struct {
 	From, To    Vec2
 	Deck        float64 // Deck height.

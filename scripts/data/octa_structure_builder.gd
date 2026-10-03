@@ -1,6 +1,6 @@
 class_name OctaStructureBuilder
 extends RefCounted
-## Mutable authoring helper. Its temporary lookup is discarded after build().
+## Mutable authoring helper. Release the builder after build() to discard its lookup.
 ## Use OctaStructure for storage and rendering.
 
 var _occupied: Dictionary = {}

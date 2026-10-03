@@ -20,6 +20,7 @@ uniform float silhouette_city = 0.0; // 0 = rolling hills, 1 = skyline blocks.
 uniform float silhouette_seed = 0.0;
 uniform float haze = 0.4; // How much the silhouette fades into the horizon.
 uniform float stars = 0.0;
+uniform float city_lights = 0.0; // Lit windows in a skyline silhouette.
 
 float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -86,20 +87,22 @@ void sky() {
 	if (y < 0.0) {
 		color = mix(horizon_color.rgb, below_color.rgb, smoothstep(0.0, 0.04, -y));
 	}
-	// Distant hills or skyline, fading into the haze at their base.
-	// Below the horizon the ground plane normally covers the sky; its far edge fades to
-	// below_color, so silhouettes stand only above the horizon.
-	if (silhouette_height > 0.0 && y >= 0.0) {
+	// Distant hills or skyline, fading into the haze at their base. They continue a hair
+	// below the horizon so they meet the far edge of the ground plane without a gap.
+	if (silhouette_height > 0.0 && y > -0.012) {
 		float top = ridge(dir) * silhouette_height;
-		if (y < top) {
+		if (y < top && top > 0.001) {
 			float depth = clamp(y / max(top, 0.0001), 0.0, 1.0);
-			vec3 land = mix(mix(below_color.rgb, horizon_color.rgb, haze), silhouette_color.rgb, 0.45 + 0.55 * depth);
-			if (silhouette_city > 0.5) {
+			// Hills dissolve into the haze at their base; skylines keep a firmer edge.
+			vec3 mist = mix(below_color.rgb, horizon_color.rgb, haze);
+			float solid = silhouette_city > 0.5 ? 0.45 + 0.55 * depth : smoothstep(0.0, 0.6, depth);
+			vec3 land = mix(mist, silhouette_color.rgb, solid);
+			if (silhouette_city > 0.5 && y > 0.0) {
 				// A few lit windows.
 				vec2 window = floor(vec2(atan(dir.x, dir.z) * 900.0, y * 900.0));
-				land += vec3(1.0, 0.78, 0.45) * step(0.975, hash(window)) * 0.6 * stars;
+				land += vec3(1.0, 0.78, 0.45) * step(0.975, hash(window)) * 0.6 * city_lights;
 			}
-			color = land;
+			color = mix(land, below_color.rgb, smoothstep(0.0, 0.012, -y));
 		}
 	}
 	COLOR = color;
