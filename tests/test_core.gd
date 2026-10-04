@@ -304,11 +304,21 @@ func _test_editor() -> void:
 func _test_generated_builds() -> void:
 	var codec := OctaFile.new()
 	for name in [
-		"angkor_wat", "arena", "battleship", "castle", "cruise_ship", "eiffel_tower",
-		"floating_islands", "gothic_cathedral", "japanese_castle", "lighthouse_cove", "manhattan",
-		"medieval_tower", "meteora", "neuschwanstein", "piazza_dei_miracoli", "pirate_galleon",
-		"pont_du_gard", "prague_old_town", "santorini", "saturn_v_launch", "st_basils_cathedral",
-		"taj_mahal", "temple_of_heaven", "tower_bridge", "wild_west_town"
+		"aircraft_carrier", "alhambra", "amsterdam_canals", "angkor_wat", "arena", "battleship",
+		"big_ben", "blue_mosque", "borobudur", "castle", "chichen_itza", "christ_the_redeemer",
+		"cinque_terre", "cliff_palace", "clipper_ship", "colosseum_ruins", "cruise_ship",
+		"dubrovnik", "easter_island", "eiffel_tower", "eilean_donan", "floating_islands",
+		"forbidden_city", "funfair", "giza_pyramids", "golden_gate_bridge", "golden_pavilion",
+		"gothic_cathedral", "great_wall", "hagia_sophia", "haunted_manor", "hillside_burrows",
+		"ishtar_gate", "japanese_castle", "karnak_temple", "kinderdijk", "kremlin",
+		"lighthouse_cove", "lunar_landing", "machu_picchu", "manhattan", "mars_base",
+		"medieval_tower", "meteora", "mont_saint_michel", "monument_valley", "neuschwanstein",
+		"oil_rig", "parthenon", "petra_treasury", "piazza_dei_miracoli", "pirate_galleon",
+		"pont_du_gard", "potala_palace", "prague_old_town", "rothenburg", "sagrada_familia",
+		"santorini", "saturn_v_launch", "st_basils_cathedral", "statue_of_liberty", "stave_church",
+		"steam_train", "steampunk_airship", "sydney_opera_house", "taj_mahal", "temple_of_heaven",
+		"tigers_nest", "tower_bridge", "treehouse_village", "venice_grand_canal", "viking_harbor",
+		"volcano_island", "wild_west_town", "wizard_academy"
 	]:
 		var structure := codec.load_structure("res://structures/%s.octa" % name)
 		check(structure != null, "Generated %s loads: %s" % [name, codec.last_error])
