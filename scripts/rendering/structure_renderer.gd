@@ -13,7 +13,7 @@ var timeline := AssemblyTimeline.new()
 var xray: bool = false
 var _solid := ShaderMaterial.new()
 var _xray := ShaderMaterial.new()
-var _gap: float = 0.045
+var _gap: float = 0.0 # Cells tile face to face; the brush and X-ray never change it.
 ## Every cell; drawn while assembling and in X-ray.
 var full_multimesh: MultiMesh
 ## Surface cells only, or null until the background task finishes.
@@ -30,6 +30,7 @@ func _init() -> void:
 	_solid.shader = preload("res://shaders/cell.gdshader")
 	_xray.shader = preload("res://shaders/cell_xray.gdshader")
 	material_override = _solid
+	_set_parameter("cell_gap", _gap)
 	set_process(false)
 
 ## recenter = false keeps the node's position and height shading, so an edited

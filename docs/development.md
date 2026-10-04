@@ -135,7 +135,7 @@ different `.app` path if necessary. The wrapper itself requires macOS and zsh.
 | `--views=hero,front,top` | These three settled views; `side` is also supported; empty value disables settled screenshots |
 | `--modes=solid,xray` | Default `solid`; `--xray` is a shorthand when `--modes` is absent |
 | `--at=0.25,0.6` | Additional frozen mid-assembly frames at fractions of total duration, always hero view |
-| `--gap=0` | Renderer gap, default 0.045; shader positions change, saved data does not |
+| `--gap=0.045` | Renderer gap, default 0 (face-to-face); shader positions change, saved data does not |
 | `--out=captures` | PNG destination; relative paths resolve under `res://`, absolute paths also work |
 | `--bench` | Measure settled hero frames, waiting up to 20 seconds for surface extraction |
 
@@ -161,13 +161,13 @@ the same resolution, mode, gap, and hardware. This is not a pure GPU timer.
 | Change | Files to consider | Verification |
 | --- | --- | --- |
 | Add a generated build | `gen/scenes/`, optional `gen/kit/`, output in `structures/`, explicit generated-build list in `tests/test_core.gd`; optional `WorldTheme` entry | Go vet/tests, regenerate, `octapreview`, Godot core |
-| Add a primitive preset | `StructurePresets` enum/titles/descriptions/generation, toolbar icon/button loop, `OctaStudio` key handling, HUD help, tests | Update hard-coded four-preset loops, core + scene, capture |
+| Add a primitive preset | `StructurePresets` enum/titles/descriptions/generation, the toolbar's Primitives menu loop, `OctaStudio` key handling, HUD help card, tests | Update hard-coded four-preset loops, core + scene, capture |
 | Change cell mesh or edges | `TruncatedOctahedronMesh`, `cell_common.gdshaderinc`, both cell materials; `UnitGlyph` derives geometry | Topology/volume/shared-face checks, scene, solid + X-ray captures |
 | Change timing | `AssemblyTimeline` and shared shader formulas/uniforms; renderer | Timing and scene tests, partial captures via `--at` |
 | Change environment | `WorldTheme`, `StudioEnvironment`, sky/ground shaders | Scene theme wiring, themed hero/side captures |
 | Change data or format | Both codecs/validators, `docs/octa-format.md`, relevant GDScript/Go tests | Both language suites and checked-in generated files |
-| Change brush tools | `OctaEditor`, `StructureTools`, `BrushGizmo`, `ToolPalette`, `OctaPalette`, `brush`/`black_hole` shaders, `OctaStudio` keys | Core editor checks, scene `_test_tools()`, hidden GPU capture of the gizmo |
-| Change controls | `StudioHUD`, `StructureToolbar`, `StudioTheme`, `OrbitCamera`, `OctaStudio` signal wiring | Scene tests, native input/dialog inspection, README controls |
+| Change brush tools | `OctaEditor`, `StructureTools`, `BrushGizmo`, `ToolPalette`, `ToolOptions`, `OctaPalette`, `brush`/`black_hole` shaders, `OctaStudio` keys | Core editor checks, scene `_test_tools()`, hidden GPU capture of the gizmo |
+| Change controls | `StudioHUD` (readout, assembly line, help card), `StructureToolbar` (bar and settings menu), `ToolOptions`, `StudioTheme`, `OrbitCamera`, `OctaStudio` signal wiring | Scene tests, native input/dialog inspection, README controls |
 
 For a new Go scene, follow the complete example in the [generator guide](../gen/README.md).
 `go test ./...` compiles recipes but does not rewrite `.octa` assets. Regenerate

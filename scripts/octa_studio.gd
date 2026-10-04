@@ -10,6 +10,8 @@ var environment: StudioEnvironment
 var _files := OctaFile.new()
 var _save_dialog: FileDialog
 var _load_dialog: FileDialog
+## The scoop is opt-in: the settings menu adds it to the tool strip.
+var scoop_enabled: bool = false
 
 func _ready() -> void:
 	environment = StudioEnvironment.new()
@@ -28,15 +30,16 @@ func _ready() -> void:
 	hud.toolbar.replay_requested.connect(replay)
 	hud.toolbar.save_requested.connect(_choose_save)
 	hud.toolbar.load_requested.connect(_choose_load)
-	hud.reset_view_requested.connect(camera.reset_view)
-	hud.orbit_changed.connect(func(enabled: bool) -> void: camera.auto_orbit = enabled)
-	hud.gap_changed.connect(renderer.set_gap)
-	hud.xray_changed.connect(renderer.set_xray)
+	hud.toolbar.reset_view_requested.connect(camera.reset_view)
+	hud.toolbar.help_requested.connect(hud.toggle_help)
+	hud.toolbar.orbit_changed.connect(func(enabled: bool) -> void: camera.auto_orbit = enabled)
+	hud.toolbar.xray_changed.connect(renderer.set_xray)
+	hud.toolbar.scoop_enabled_changed.connect(set_scoop_enabled)
 	renderer.assembly_progress.connect(hud.show_progress)
 	hud.tools.tool_selected.connect(select_tool)
-	hud.tools.radius_changed.connect(set_brush_radius)
-	hud.tools.tilt_changed.connect(set_scoop_tilt)
-	hud.tools.color_selected.connect(set_brush_color)
+	hud.options.radius_changed.connect(set_brush_radius)
+	hud.options.tilt_changed.connect(set_scoop_tilt)
+	hud.options.color_selected.connect(set_brush_color)
 	tools.committed.connect(hud.show_counts)
 	tools.brush_full.connect(func() -> void: hud.notify("Brush full here — release, then click again for another layer"))
 	_save_dialog = _make_dialog(FileDialog.FILE_MODE_SAVE_FILE)
@@ -55,7 +58,7 @@ func _present(structure: OctaStructure, preset: int = -1) -> void:
 	hud.show_structure(structure, preset)
 	renderer.display(structure)
 	# Palettes differ between builds: keep the chosen color only while it still exists.
-	hud.tools.show_palette(structure.palette)
+	hud.options.show_palette(structure.palette)
 	set_brush_color(tools.brush_color)
 	var box := structure.bounds()
 	environment.apply_theme(WorldTheme.STUDIO if preset >= 0 else WorldTheme.name_for(structure.title))
@@ -92,19 +95,28 @@ func replay() -> void:
 func select_tool(tool: StructureTools.Tool) -> void:
 	tools.set_tool(tool)
 	hud.tools.show_tool(tool)
+	hud.options.show_tool(tool)
+
+## Add or withdraw the scoop. Withdrawing it while it is in use falls back to orbit.
+func set_scoop_enabled(enabled: bool) -> void:
+	scoop_enabled = enabled
+	hud.tools.set_scoop_available(enabled)
+	hud.toolbar.set_setting_checked(StructureToolbar.Setting.SCOOP, enabled)
+	if not enabled and tools.tool == StructureTools.Tool.SCOOP:
+		select_tool(StructureTools.Tool.NAVIGATE)
 
 func set_brush_radius(cells: float) -> void:
 	tools.set_radius(cells)
-	hud.tools.show_radius(tools.radius)
+	hud.options.show_radius(tools.radius)
 
 ## -1 lets the brush adopt neighbors' colors; 0..15 paints one color of the build's palette.
 func set_brush_color(index: int) -> void:
 	tools.set_brush_color(index)
-	hud.tools.show_color(tools.brush_color)
+	hud.options.show_color(tools.brush_color)
 
 func set_scoop_tilt(tilt: Vector2i) -> void:
 	tools.tilt = tilt.clamp(Vector2i(-45, -45), Vector2i(45, 45))
-	hud.tools.show_tilt(tools.tilt)
+	hud.options.show_tilt(tools.tilt)
 
 func toggle_xray() -> void:
 	renderer.set_xray(not renderer.xray)
@@ -115,6 +127,9 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		return
 	# Keep shortcuts out of modal file dialogs.
 	if _save_dialog.visible or _load_dialog.visible:
+		return
+	if hud.help.visible and event.physical_keycode in [KEY_ESCAPE, KEY_H, KEY_F1]:
+		hud.set_help_visible(false)
 		return
 	match event.physical_keycode:
 		KEY_1, KEY_2, KEY_3, KEY_4:
@@ -136,7 +151,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		KEY_E:
 			select_tool(StructureTools.Tool.BLACK_HOLE)
 		KEY_S:
-			select_tool(StructureTools.Tool.SCOOP)
+			if scoop_enabled:
+				select_tool(StructureTools.Tool.SCOOP)
+		KEY_H, KEY_F1:
+			hud.toggle_help()
 		KEY_BRACKETLEFT, KEY_BRACKETRIGHT:
 			set_brush_radius(tools.radius * (0.8 if event.physical_keycode == KEY_BRACKETLEFT else 1.25))
 		KEY_LEFT, KEY_RIGHT:

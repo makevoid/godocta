@@ -1,84 +1,145 @@
 class_name StructureToolbar
 extends PanelContainer
+## The top bar: wordmark, tool strip, the Primitives and Builds menus, the structure
+## readout filled by `StudioHUD`, file actions, help and the settings menu. Primitives
+## sit in a menu because builds are the main entry point. Infrequent switches — X-ray,
+## auto orbit and the optional scoop — live in the settings menu instead of the bar.
 
 signal shape_selected(shape: StructurePresets.Shape)
 signal file_selected(path: String)
 signal replay_requested
 signal save_requested
 signal load_requested
+signal reset_view_requested
+signal help_requested
+signal orbit_changed(enabled: bool)
+signal xray_changed(enabled: bool)
+signal scoop_enabled_changed(enabled: bool)
 const STRUCTURES_DIR := "res://structures"
-var shape_buttons: Array[Button] = []
+const HEIGHT := 50.0
+## Settings popup item ids.
+enum Setting { XRAY, ORBIT, SCOOP }
+var tools: ToolPalette
+var shapes: MenuButton
 var gallery: MenuButton
+var settings: MenuButton
 var gallery_paths: PackedStringArray = []
+## Where `StudioHUD` adds the title and counters.
+var info_slot: VBoxContainer
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	offset_bottom = 88
-	var background := StudioTheme.panel(Color("10191d"), StudioTheme.LINE, 0)
-	background.content_margin_left = 30
-	background.content_margin_right = 30
-	background.content_margin_top = 20
-	background.content_margin_bottom = 20
+	offset_bottom = HEIGHT
+	var background := StudioTheme.panel(Color("10191d"), StudioTheme.LINE, 0, 18, 8)
 	add_theme_stylebox_override("panel", background)
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 12)
+	row.add_theme_constant_override("separation", 8)
 	add_child(row)
 	var logo := TextureRect.new()
 	logo.texture = preload("res://assets/octa.svg")
-	logo.custom_minimum_size = Vector2(37, 37)
+	logo.custom_minimum_size = Vector2(26, 26)
 	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	row.add_child(logo)
-	var identity := VBoxContainer.new()
-	identity.custom_minimum_size.x = 162
-	identity.add_theme_constant_override("separation", 0)
-	identity.add_child(StudioTheme.label("O C T A", 23))
-	identity.add_child(StudioTheme.label("STRUCTURE STUDIO", 10, StudioTheme.MUTED))
-	row.add_child(identity)
-	var separator := VSeparator.new()
-	row.add_child(separator)
-	var icons: Array[Texture2D] = [preload("res://assets/cube.svg"), preload("res://assets/sphere.svg"),
-		preload("res://assets/pyramid.svg"), preload("res://assets/cylinder.svg")]
-	var group := ButtonGroup.new()
-	for index in 4:
-		var title := "Cube 10³" if index == 0 else StructurePresets.TITLES[index]
-		var button := StudioTheme.button(title, 124)
-		button.icon = icons[index]
-		button.toggle_mode = true
-		button.button_group = group
-		button.tooltip_text = "Assemble %s · shortcut %d" % [StructurePresets.TITLES[index].to_lower(), index + 1]
-		button.pressed.connect(func() -> void: shape_selected.emit(index as StructurePresets.Shape))
-		shape_buttons.append(button)
-		row.add_child(button)
+	var wordmark := StudioTheme.label("O C T A", 16)
+	wordmark.custom_minimum_size.x = 66
+	wordmark.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(wordmark)
+	row.add_child(VSeparator.new())
+	tools = ToolPalette.new()
+	row.add_child(tools)
+	var gap := Control.new()
+	gap.custom_minimum_size.x = 18
+	row.add_child(gap)
+	_build_shapes(row)
 	_build_gallery(row)
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(spacer)
-	var load_button := StudioTheme.button("Load", 70)
-	load_button.tooltip_text = "Open an .octa structure"
-	load_button.pressed.connect(func() -> void: load_requested.emit())
-	row.add_child(load_button)
-	var save_button := StudioTheme.button("Save", 70)
-	save_button.tooltip_text = "Save the arrangement as a compact .octa file"
-	save_button.pressed.connect(func() -> void: save_requested.emit())
-	row.add_child(save_button)
-	var replay := StudioTheme.button("Replay   R", 115)
-	replay.add_theme_color_override("font_color", StudioTheme.ACCENT)
-	replay.pressed.connect(func() -> void: replay_requested.emit())
-	row.add_child(replay)
+	info_slot = VBoxContainer.new()
+	info_slot.add_theme_constant_override("separation", 0)
+	info_slot.alignment = BoxContainer.ALIGNMENT_CENTER
+	info_slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(info_slot)
+	row.add_child(VSeparator.new())
+	_build_actions(row)
+
+## The four primitives, behind one menu: generated builds are the usual starting point.
+func _build_shapes(row: HBoxContainer) -> void:
+	shapes = StudioTheme.menu("Primitives  ▾", 108)
+	shapes.icon = preload("res://assets/cube.svg")
+	shapes.tooltip_text = "Assemble a primitive · shortcuts 1–4"
+	var popup := shapes.get_popup()
+	for index in 4:
+		popup.add_radio_check_item("%s    %d" % [StructurePresets.TITLES[index], index + 1], index)
+	popup.id_pressed.connect(func(id: int) -> void: shape_selected.emit(id as StructurePresets.Shape))
+	row.add_child(shapes)
 
 ## Every .octa file in structures/: generated builds (castle, arena, …) and saved ones.
 func _build_gallery(row: HBoxContainer) -> void:
-	gallery = MenuButton.new()
-	gallery.text = "Builds  ▾"
+	gallery = StudioTheme.menu("Builds  ▾", 118)
 	gallery.icon = preload("res://assets/castle.svg")
-	gallery.custom_minimum_size = Vector2(124, 44)
-	gallery.flat = false # MenuButton inherits the theme's Button styles once unflattened.
+	StudioTheme.primary(gallery)
 	gallery.tooltip_text = "Large structures from structures/*.octa · shortcuts 5–9"
-	gallery.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	gallery.get_popup().id_pressed.connect(func(id: int) -> void: file_selected.emit(gallery_paths[id]))
 	row.add_child(gallery)
 	refresh_gallery()
+
+func _build_actions(row: HBoxContainer) -> void:
+	var load_button := StudioTheme.button("Load", 58)
+	load_button.tooltip_text = "Open an .octa structure"
+	load_button.pressed.connect(func() -> void: load_requested.emit())
+	row.add_child(load_button)
+	var save_button := StudioTheme.button("Save", 58)
+	save_button.tooltip_text = "Save the arrangement as a compact .octa file"
+	save_button.pressed.connect(func() -> void: save_requested.emit())
+	row.add_child(save_button)
+	var reset := StudioTheme.button("Reset  F", 76)
+	reset.tooltip_text = "Restore the default framing"
+	reset.pressed.connect(func() -> void: reset_view_requested.emit())
+	row.add_child(reset)
+	var replay := StudioTheme.button("Replay  R", 84)
+	replay.add_theme_color_override("font_color", StudioTheme.ACCENT)
+	replay.pressed.connect(func() -> void: replay_requested.emit())
+	row.add_child(replay)
+	var help := StudioTheme.button("?", 32)
+	help.tooltip_text = "Controls and shortcuts · H"
+	help.pressed.connect(func() -> void: help_requested.emit())
+	row.add_child(help)
+	settings = StudioTheme.menu("Settings  ▾", 92)
+	settings.tooltip_text = "X-ray, auto orbit and the scoop tool"
+	var popup := settings.get_popup()
+	popup.add_check_item("X-ray view    X", Setting.XRAY)
+	popup.set_item_tooltip(Setting.XRAY, "Semi-transparent cells with every edge and vertex visible.")
+	popup.add_check_item("Auto orbit", Setting.ORBIT)
+	popup.add_check_item("Enable scoop    S", Setting.SCOOP)
+	popup.set_item_tooltip(Setting.SCOOP, "Add the scoop tool, a half globe that shaves the surface.")
+	popup.hide_on_checkable_item_selection = false
+	popup.id_pressed.connect(_toggle_setting)
+	row.add_child(settings)
+
+## Settings are checkable: flip the item, then report it.
+func _toggle_setting(id: int) -> void:
+	var popup := settings.get_popup()
+	var index := popup.get_item_index(id)
+	var enabled := not popup.is_item_checked(index)
+	popup.set_item_checked(index, enabled)
+	match id:
+		Setting.XRAY:
+			xray_changed.emit(enabled)
+		Setting.ORBIT:
+			orbit_changed.emit(enabled)
+		Setting.SCOOP:
+			scoop_enabled_changed.emit(enabled)
+
+## Reflect a setting changed elsewhere, e.g. by a keyboard shortcut.
+func set_setting_checked(id: Setting, enabled: bool) -> void:
+	var popup := settings.get_popup()
+	popup.set_item_checked(popup.get_item_index(id), enabled)
+
+func is_setting_checked(id: Setting) -> bool:
+	var popup := settings.get_popup()
+	return popup.is_item_checked(popup.get_item_index(id))
 
 func refresh_gallery() -> void:
 	var files := Array(DirAccess.get_files_at(STRUCTURES_DIR)).filter(
@@ -92,6 +153,8 @@ func refresh_gallery() -> void:
 		var shortcut := "    %d" % (gallery_paths.size() + 4) if gallery_paths.size() <= 5 else ""
 		popup.add_item(name.get_basename().capitalize() + shortcut, gallery_paths.size() - 1)
 
+## Check the displayed primitive, or clear every entry for a loaded build.
 func select_shape(index: int) -> void:
-	for i in shape_buttons.size():
-		shape_buttons[i].set_pressed_no_signal(i == index)
+	var popup := shapes.get_popup()
+	for item in popup.item_count:
+		popup.set_item_checked(item, item == index)

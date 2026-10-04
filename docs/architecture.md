@@ -59,7 +59,7 @@ the current build. Successful saves refresh the gallery.
 
 | Class / source | Base | Responsibility and main API |
 | --- | --- | --- |
-| [OctaStudio](../scripts/octa_studio.gd) | `Node3D` | Composition root; `select_preset()`, `toggle_xray()`, `_present()`, file dialogs and keyboard shortcuts |
+| [OctaStudio](../scripts/octa_studio.gd) | `Node3D` | Composition root; `select_preset()`, `select_tool()`, `toggle_xray()`, `set_scoop_enabled()`, `_present()`, file dialogs and keyboard shortcuts |
 | [OctaLattice](../scripts/data/octa_lattice.gd) | `RefCounted` | `is_valid()`, `to_world()`, `NEIGHBORS`, coordinate cap |
 | [OctaStructure](../scripts/data/octa_structure.gd) | `RefCounted` | Validated packed triples; `from_cells()`, `validation_error()`, `set_colors()`, `color_error()`, getters, `storage_bytes()`, `bounds()` |
 | [OctaStructureBuilder](../scripts/data/octa_structure_builder.gd) | `RefCounted` | Mutable occupancy dictionary; `add()`, `remove()`, `contains()`, `build()` sorted by Y/Z/X |
@@ -75,18 +75,30 @@ the current build. Successful saves refresh the gallery.
 | [WorldTheme](../scripts/rendering/world_theme.gd) | `RefCounted` | `name_for()` title lookup, `themes()` dictionaries, studio and shared afternoon defaults |
 | [StructureTools](../scripts/tools/structure_tools.gd) | `Node3D` | Tool enum, stroke input, `apply()`, `commit()`, `reset()`, pending-cell and black-hole overlays |
 | [BrushGizmo](../scripts/tools/brush_gizmo.gd) | `Node3D` | Globe/dome brush outline, scoop cut-plane ring, billboard black hole |
-| [ToolPalette](../scripts/ui/tool_palette.gd) | `PanelContainer` | Tool buttons, brush size, brush color submenu, scoop tilt; `show_tool()`, `show_radius()`, `show_palette()`, `show_color()`, `show_tilt()` |
-| [StudioHUD](../scripts/ui/studio_hud.gd) | `CanvasLayer` | `show_structure()`, `show_progress()`, `set_xray()`, `notify()`; status, view controls, toasts and FPS |
-| [StructureToolbar](../scripts/ui/structure_toolbar.gd) | `PanelContainer` | Preset buttons, `refresh_gallery()`, `select_shape()`, `gallery_paths`, action signals |
-| [StudioTheme](../scripts/ui/studio_theme.gd) | `RefCounted` | Color constants and `create()`, `panel()`, `label()`, `button()` factories |
-| [UnitGlyph](../scripts/ui/unit_glyph.gd) | `Control` | Draws the unit's 36 edges from the same geometric vertices as the mesh |
+| [ToolPalette](../scripts/ui/tool_palette.gd) | `HBoxContainer` | The tool strip inside the top bar; `show_tool()`, `set_scoop_available()` |
+| [ToolOptions](../scripts/ui/tool_options.gd) | `PanelContainer` | Bottom-right options for the selected tool: brush size, color grid, scoop tilt; `show_tool()`, `show_radius()`, `show_palette()`, `show_color()`, `set_more_expanded()`, `show_tilt()` |
+| [StudioHUD](../scripts/ui/studio_hud.gd) | `CanvasLayer` | `show_structure()`, `show_progress()`, `set_xray()`, `notify()`, `toggle_help()`; readout, assembly line, help card and toasts |
+| [StructureToolbar](../scripts/ui/structure_toolbar.gd) | `PanelContainer` | Top bar: tool strip, Primitives and Builds menus, file actions, settings menu; `refresh_gallery()`, `select_shape()`, `set_setting_checked()`, `gallery_paths`, action signals |
+| [StudioTheme](../scripts/ui/studio_theme.gd) | `RefCounted` | Color constants and `create()`, `panel()`, `card()`, `primary()`, `label()`, `button()`, `menu()` factories |
+| [UnitGlyph](../scripts/ui/unit_glyph.gd) | `Control` | Draws the unit's 36 edges from the same geometric vertices as the mesh, in the help card |
 
 The toolbar emits `shape_selected`, `file_selected`, `replay_requested`,
-`save_requested`, and `load_requested`. The HUD emits `reset_view_requested`,
-`orbit_changed`, `gap_changed`, and `xray_changed`. `OctaStudio` routes them to the
+`save_requested`, `load_requested`, `reset_view_requested`, `help_requested`, and the
+settings menu's `orbit_changed`, `xray_changed` and `scoop_enabled_changed`. The tool
+strip emits `tool_selected`; the options panel emits `radius_changed`,
+`color_selected` and `tilt_changed`. `OctaStudio` routes them to the
 appropriate object. Renderer `assembly_progress(fraction, duration)` updates the
 HUD; `assembly_finished` signals natural completion and is used by integration
 tests. A direct `seek(1)` updates progress but does not emit `assembly_finished`.
+
+The chrome is one 50-point top bar plus panels that appear only when they apply. The
+bar holds the wordmark, the tool strip, the Primitives and Builds menus, the title and
+counters, the file actions, the help button and the settings menu; a hairline progress
+bar and its clock sit under it while cells fly in and disappear on completion. X-ray,
+auto orbit and the scoop live in the settings menu, which keeps rarely flipped switches
+off the bar — the scoop is off until enabled, and withdrawing it falls back to orbit.
+`ToolOptions` shows the options of the selected tool in the bottom right corner and
+stays hidden while orbiting. The help card lists every control and the unit diagram.
 
 The gallery lists all `.octa` filenames in `res://structures`, sorted by filename.
 Its labels are capitalized stems, while the HUD title and world selection come from
@@ -144,8 +156,8 @@ ordinary texture coordinates would break both materials.
 
 The renderer node, rather than the stored coordinates, is translated to center X/Z
 and put the bottom at Y=0.06. Cell gap shrinks vertices around their centers; it does
-not move cells. The public gap setter clamps to 0–0.25; the HUD slider offers 0–0.2,
-default 0.045. A grown custom AABB includes assembly motion so instances are not
+not move cells. The public gap setter clamps to 0–0.25 and defaults to 0, so cells
+tile face to face; `tools/capture.gd --gap=` is the only caller. A grown custom AABB includes assembly motion so instances are not
 culled while flying in.
 
 The CPU advances one timeline; the shared shader computes every cell's motion:
@@ -253,15 +265,16 @@ Added cells and the spiralling swallowed cells are drawn by two overlay
 `MultiMeshInstance3D`s that share the renderer's current material (rank 0, so they
 are always settled).
 
-New cells take `StructureTools.brush_color`, a palette index picked in the tool
-palette's color submenu, or their neighbors' most common color when it is auto
+New cells take `StructureTools.brush_color`, a palette index picked in the color
+grid of `ToolOptions`, or their neighbors' most common color when it is auto
 (-1). `OctaEditor.color_choice()` clamps the index into the displayed build's
 palette and always returns -1 on uncolored builds, whose cells carry no index, so
-presets stay on auto with the submenu disabled. `_present()` reoffers the new
-build's palette through `ToolPalette.show_palette()` and drops a choice it cannot
+presets stay on auto with the grid hidden. `_present()` reoffers the new
+build's palette through `ToolOptions.show_palette()` and drops a choice it cannot
 store; the gizmo globe takes the painted color. `OctaPalette` supplies the swatches
 and the Go color names, while the swatches of a colored build come from its own
-embedded palette, so the menu shows what will actually be stored.
+embedded palette, so the grid shows what will actually be stored. Eight swatches are
+visible and More reveals all 16; picking one of the last eight unfolds them.
 
 After `COMMIT_DELAY` idle seconds, or before Save/Replay, `commit()` calls
 `display(data, false, recenter = false)`, which keeps the node position and the

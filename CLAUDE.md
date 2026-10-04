@@ -77,8 +77,10 @@ use `--bench` for forced draws plus GPU readback, rather than the HUD FPS counte
   supplies dictionaries consumed by `StudioEnvironment`.
 - `scripts/tools/`: `StructureTools` owns brush input, pending edits and commits through
   `OctaEditor` (`scripts/data/`); `BrushGizmo` draws the globe/dome and black hole.
-- `scripts/ui/`: `StudioHUD` presents state and emits intent; `ToolPalette` selects
-  tools; `StructureToolbar` owns preset buttons and the file gallery; `StudioTheme` builds control styles;
+- `scripts/ui/`: `StudioHUD` presents state, the assembly line and the help card;
+  `StructureToolbar` is the top bar and owns the Primitives/Builds menus, file actions
+  and the settings menu; `ToolPalette` is the tool strip inside it; `ToolOptions` is the
+  bottom-right panel for the selected tool; `StudioTheme` builds control styles;
   `UnitGlyph` draws a diagram from the actual unit vertices.
 - `gen/`: `octa` supplies geometry, colored grids, ordering, and codecs; `kit`
   supplies reusable components; `scenes` composes registered recipes;

@@ -3,7 +3,7 @@ uniform float assembly_time = 4.0;
 uniform float release_window = 2.8;
 uniform float settle_time = 1.2;
 uniform float flight_scale = 1.0;
-uniform float cell_gap : hint_range(0.0, 0.25) = 0.045;
+uniform float cell_gap : hint_range(0.0, 0.25) = 0.0;
 uniform vec4 base_color : source_color = vec4(0.49, 0.76, 0.65, 1.0);
 // Up to 16 structure colors, already linear (array uniforms skip source_color conversion).
 // INSTANCE_CUSTOM.a picks one, or is negative for base_color.

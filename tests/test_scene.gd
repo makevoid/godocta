@@ -20,12 +20,12 @@ func _run() -> void:
 	if capture:
 		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://captures"))
 	for shape in 4:
-		# Exercise the toolbar signal wiring by pressing the actual Button.
-		studio.hud.toolbar.shape_buttons[shape].pressed.emit()
+		# Exercise the toolbar signal wiring through the actual Primitives menu.
+		studio.hud.toolbar.shapes.get_popup().id_pressed.emit(shape)
 		check(studio.renderer.timeline.elapsed == 0.0, "Button resets animation")
 		check(studio.renderer.structure.title == StructurePresets.TITLES[shape], "Button selects matching structure")
 		check(is_equal_approx(studio.camera.focus.y, studio.renderer.structure.bounds().size.y * 0.46), "Camera frames selected height")
-		check(studio.hud.toolbar.shape_buttons[shape].button_pressed, "Selected toolbar button is highlighted")
+		check(studio.hud.toolbar.shapes.get_popup().is_item_checked(shape), "Selected primitive is checked in the menu")
 		var mesh := studio.renderer.multimesh
 		var buffer := mesh.buffer
 		var first := Vector3(buffer[3], buffer[7], buffer[11])
@@ -47,7 +47,8 @@ func _run() -> void:
 		while studio.renderer.surface_multimesh == null and Time.get_ticks_msec() < deadline:
 			await process_frame
 		check(studio.renderer.drawn_count() < studio.renderer.structure.cell_count(), "Settled builds draw only surface cells")
-		check(studio.hud._state.text == "Assembly complete" and studio.hud._progress.value == 1.0, "HUD reflects completed assembly")
+		check(studio.hud._state.text == "Assembly complete" and studio.hud._progress.value == 1.0
+			and not studio.hud._progress.visible, "HUD reflects completed assembly and hides the bar")
 		if capture:
 			await _capture(StructurePresets.TITLES[shape].to_lower())
 	# Interrupt an in-flight preset and replay repeatedly: no stale tweens/signals.
@@ -64,7 +65,8 @@ func _run() -> void:
 	check(studio.renderer.multimesh.buffer[15] == -1.0, "Uncolored cells use the base color")
 	# X-ray swaps the material and keeps shared parameters in sync.
 	studio.toggle_xray()
-	check(studio.renderer.xray and studio.hud._xray.button_pressed, "X-ray toggles on, HUD in sync")
+	check(studio.renderer.xray and studio.hud.toolbar.is_setting_checked(StructureToolbar.Setting.XRAY),
+		"X-ray toggles on, settings menu in sync")
 	check(studio.renderer.drawn_count() == studio.renderer.structure.cell_count(), "X-ray draws every cell")
 	check(is_zero_approx(studio.renderer.material_override.get_shader_parameter("cell_gap")), "X-ray shares parameters")
 	studio.toggle_xray()
@@ -96,8 +98,14 @@ func _test_tools() -> void:
 	studio.renderer.set_gap(0.045)
 	var tools := studio.tools
 	var origin := studio.renderer.position
+	var options := studio.hud.options
+	check(not studio.hud.tools.tool_buttons[StructureTools.Tool.SCOOP].visible, "The scoop is off by default")
+	studio.hud.toolbar.settings.get_popup().id_pressed.emit(StructureToolbar.Setting.SCOOP)
+	check(studio.scoop_enabled and studio.hud.tools.tool_buttons[StructureTools.Tool.SCOOP].visible,
+		"The settings menu enables the scoop")
 	studio.hud.tools.tool_buttons[StructureTools.Tool.BLACK_HOLE].pressed.emit()
 	check(tools.tool == StructureTools.Tool.BLACK_HOLE and studio.hud.tools.tool_buttons[2].button_pressed, "Palette selects the black hole")
+	check(options.visible and not options._color_box.visible, "The black hole shows its size, not a color")
 	var top := Vector3(0, studio.renderer.structure.bounds().end.y, 0)
 	tools.apply(top)
 	check(not studio.renderer.timeline.is_running(), "Editing finishes the assembly")
@@ -111,8 +119,9 @@ func _test_tools() -> void:
 	check(eaten < 1729 and studio.hud._count.text == studio.hud._format_count(eaten), "Commit rebuilds and updates the HUD")
 	check(studio.renderer.position == origin, "Edits keep the build in place")
 	studio.set_scoop_tilt(Vector2i(45, 0))
-	check(studio.hud.tools._tilt_buttons[0][2].button_pressed and studio.hud.tools._tilt_buttons[1][1].button_pressed, "Tilt shows in the palette")
+	check(options._tilt_buttons[0][2].button_pressed and options._tilt_buttons[1][1].button_pressed, "Tilt shows in the options")
 	studio.select_tool(StructureTools.Tool.SCOOP)
+	check(options._tilt_box.visible, "The scoop reveals its tilt")
 	var axis := tools.scoop_axis()
 	check(is_equal_approx(axis.angle_to(Vector3.UP), PI / 4.0), "Tilted scoop leans 45°")
 	tools.apply(Vector3(3, top.y - 0.75, 3), axis)
@@ -146,20 +155,24 @@ func _test_tools() -> void:
 	studio.select_preset(StructurePresets.Shape.CUBE)
 	check(studio.renderer.structure.cell_count() == 1729 and tools.editor == null, "Switching builds discards pending edits")
 	_test_brush_colors()
-	studio.select_tool(StructureTools.Tool.NAVIGATE)
+	studio.select_tool(StructureTools.Tool.SCOOP)
+	studio.set_scoop_enabled(false)
+	check(tools.tool == StructureTools.Tool.NAVIGATE and not options.visible,
+		"Withdrawing the scoop falls back to orbit and hides the options")
 	studio.set_scoop_tilt(Vector2i.ZERO)
 
-## The brush color submenu: auto on uncolored builds, one palette color on colored ones.
+## The brush colors: auto on uncolored builds, one palette color on colored ones.
 func _test_brush_colors() -> void:
 	var tools := studio.tools
-	var menu := studio.hud.tools.color_menu
-	menu.get_popup().id_pressed.emit(5)
-	check(tools.brush_color == -1 and menu.disabled, "Uncolored builds keep the brush on auto")
+	var options := studio.hud.options
+	options.color_buttons[4].pressed.emit()
+	check(tools.brush_color == -1 and options.color_buttons[4].disabled, "Uncolored builds keep the brush on auto")
 	var swatch := OctaStructure.from_cells(PackedInt32Array([0, 0, 0, 2, 0, 0]), "Swatch")
 	swatch.set_colors(PackedByteArray([0, 0]), OctaPalette.colors())
 	studio._present(swatch)
-	check(not menu.disabled and tools.brush_color == -1, "A colored build opens the submenu, still on auto")
+	check(not options.color_buttons[4].disabled and tools.brush_color == -1, "A colored build offers the grid, still on auto")
 	studio.select_tool(StructureTools.Tool.BRUSH_IN)
+	check(options._color_box.visible and not options.more_expanded, "The brush shows eight colors behind More")
 	studio.set_brush_radius(1.5)
 	tools.apply(OctaLattice.to_world(Vector3i.ZERO, swatch.cell_span), Vector3.UP, Vector3.UP)
 	var auto_cells: Array = tools.editor._added.keys()
@@ -167,18 +180,21 @@ func _test_brush_colors() -> void:
 	for cell: Vector3i in auto_cells:
 		voted = voted and tools.editor.color_of(cell) == 0
 	check(voted, "Auto strokes copy their neighbors' color")
-	menu.get_popup().id_pressed.emit(13)
-	check(tools.brush_color == 12, "The submenu picks a palette color")
-	check(menu.text == "Gold" and tools.gizmo.brush_tint != null, "The button and the gizmo show it")
+	options.color_buttons[12].pressed.emit()
+	check(tools.brush_color == 12, "The grid picks a palette color")
+	check(options.color_buttons[12].button_pressed and options.more_expanded and not options.auto_button.button_pressed,
+		"A color past the first eight unfolds the rest of the palette")
+	check(tools.gizmo.brush_tint != null, "The gizmo shows the painted color")
 	tools.apply(OctaLattice.to_world(Vector3i(2, 0, 0), swatch.cell_span), Vector3.UP, Vector3.UP)
 	var gold := 0
 	for cell: Vector3i in tools.editor._added:
 		gold += 1 if tools.editor.color_of(cell) == 12 else 0
 	check(gold > 0 and gold == tools.editor._added.size() - auto_cells.size(), "Strokes paint the chosen color")
-	menu.get_popup().id_pressed.emit(0)
-	check(tools.brush_color == -1 and tools.gizmo.brush_tint == null, "Auto comes back from the submenu")
+	options.auto_button.pressed.emit()
+	check(tools.brush_color == -1 and tools.gizmo.brush_tint == null, "Auto comes back from the grid")
 	studio.select_preset(StructurePresets.Shape.CUBE)
-	check(tools.brush_color == -1 and menu.disabled, "An uncolored build falls back to auto")
+	check(tools.brush_color == -1 and options.color_buttons[4].disabled, "An uncolored build falls back to auto")
+	check(not options._color_box.visible, "Uncolored builds hide the color grid")
 
 func _capture(name: String) -> void:
 	await RenderingServer.frame_post_draw
