@@ -502,4 +502,67 @@ static func themes() -> Dictionary:
 			"silhouette": Color("7f8c78"), "silhouette_height": 0.02, "silhouette_seed": 17.0, "haze": 0.5,
 			"ground": Color("4a6234"), "mottle": 0.3, "azimuth": -40.0,
 		}),
+		# Humid Yangon evening haze over a flat green delta with low tree lines.
+		"shwedagon_pagoda": _late_afternoon({
+			"zenith": Color("6884a8"), "horizon": Color("f0cfa6"), "below": Color("b8b294"),
+			"silhouette": Color("6f7d62"), "silhouette_height": 0.04, "silhouette_seed": 17.0, "haze": 0.6,
+			"ground": Color("4a6034"), "mottle": 0.3, "azimuth": -35.0,
+		}),
+		# Moody dusk over a dense neon skyline; the city plate sits on dark asphalt.
+		"neon_city": _late_afternoon({
+			"zenith": Color("1f2540"), "horizon": Color("8a5a6e"), "below": Color("3a3a48"),
+			"glow": Color("ff7a8a"), "glow_strength": 0.45, "sun": Color("ffb8a0"), "sun_energy": 0.45, "elevation": 14.0,
+			"clouds": 0.6, "cloud_color": Color("6e5a72"), "city_lights": 0.8,
+			"silhouette": Color("2a2f45"), "silhouette_height": 0.09, "silhouette_city": 1.0, "silhouette_seed": 27.0, "haze": 0.45,
+			"ground": Color("1c1f26"), "mottle": 0.15, "azimuth": -40.0,
+		}),
+		# Alpine Albula gorge: cool late light, spruce ridges and grey peaks beyond.
+		"landwasser_viaduct": _late_afternoon({
+			"zenith": Color("5f7fab"), "horizon": Color("e4d4c0"), "below": Color("a7b0a0"),
+			"silhouette": Color("6b7890"), "silhouette_height": 0.2, "silhouette_seed": 23.0, "haze": 0.45,
+			"ground": Color("3f5a33"), "mottle": 0.35, "azimuth": -35.0,
+		}),
+		# Trampled meadows below a besieged town; low green hills on the horizon.
+		"siege_camp": _late_afternoon({
+			"zenith": Color("6a80a2"), "horizon": Color("e9cfb0"), "below": Color("b4ad94"),
+			"silhouette": Color("76866c"), "silhouette_height": 0.06, "silhouette_seed": 13.0, "haze": 0.5,
+			"ground": Color("4f6236"), "mottle": 0.3, "azimuth": -30.0,
+		}),
+		# Seto Inland Sea at high tide; green island hills in the haze. The sea layer runs on into the theme sea.
+		"itsukushima": _late_afternoon({
+			"zenith": Color("6584ae"), "horizon": Color("ecd4ba"), "below": Color("a6bccb"),
+			"silhouette": Color("5f7462"), "silhouette_height": 0.08, "silhouette_seed": 17.0, "haze": 0.5,
+			"ground": Color("1e5670"), "water": 1.0, "water_level": 1.0, "azimuth": -35.0,
+		}),
+		# Dry Ethiopian highland plateau; rock-hewn churches in red tuff pits.
+		"lalibela": _late_afternoon({
+			"zenith": Color("6787b2"), "horizon": Color("efd3ad"), "below": Color("bfa27c"),
+			"silhouette": Color("7d7a52"), "silhouette_height": 0.1, "silhouette_seed": 23.0, "haze": 0.45,
+			"ground": Color("b8945e"), "mottle": 0.3, "azimuth": -30.0,
+		}),
+		# Place de l'Étoile: Paris plaza under a hazy late-afternoon sky, low city skyline.
+		"arc_de_triomphe": _late_afternoon({
+			"zenith": Color("6a84aa"), "horizon": Color("efd2b0"), "below": Color("aca79a"),
+			"silhouette": Color("7a8094"), "silhouette_height": 0.035, "silhouette_city": 1.0, "silhouette_seed": 9.0, "haze": 0.45,
+			"ground": Color("5a5a52"), "mottle": 0.25, "azimuth": -45.0,
+		}),
+		# Snowbound winter festival: pale cold sky, frosted hills; the frozen lake is modelled as ice.
+		"ice_palace": _late_afternoon({
+			"zenith": Color("5f7ea8"), "horizon": Color("e6dcd2"), "below": Color("c4ccd4"),
+			"cloud_color": Color("dfe3e8"),
+			"silhouette": Color("8a98ae"), "silhouette_height": 0.12, "silhouette_seed": 23.0, "haze": 0.6,
+			"ground": Color("d8dde2"), "mottle": 0.15, "azimuth": -40.0,
+		}),
+		# Silk Road desert plateau at golden hour; low ochre ridges on a dusty horizon.
+		"caravanserai": _late_afternoon({
+			"zenith": Color("6a88b0"), "horizon": Color("f1d2a4"), "below": Color("cba982"),
+			"silhouette": Color("b0825a"), "silhouette_height": 0.05, "silhouette_seed": 29.0, "haze": 0.5,
+			"ground": Color("c8a372"), "mottle": 0.3, "azimuth": -30.0,
+		}),
+		# Lush prehistoric valley in a humid haze; forested ridges beyond.
+		"dinosaur_valley": _late_afternoon({
+			"zenith": Color("6a88ad"), "horizon": Color("ecd6b2"), "below": Color("a9b496"),
+			"silhouette": Color("566f5a"), "silhouette_height": 0.16, "silhouette_seed": 29.0, "haze": 0.6,
+			"ground": Color("3f5a30"), "mottle": 0.4, "azimuth": -35.0,
+		}),
 	}

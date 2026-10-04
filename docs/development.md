@@ -74,6 +74,25 @@ cache for the command, for example
 `(cd gen && GOCACHE=/tmp/godocta-go-cache go test ./...)`. This does not change the
 module or your global Go configuration.
 
+## Headless build previews
+
+To look at a generated build without Godot, use the pure-Go CPU renderer. It draws
+the exposed faces of every cell with flat shading and sun shadows over a neutral
+sky and ground, in about a second, with no window or GPU:
+
+```sh
+(cd gen && go run ./cmd/octapreview castle)                       # captures/preview/castle.png
+(cd gen && go run ./cmd/octapreview -views hero -size 1800x1200 arena)
+(cd gen && go run ./cmd/octapreview -out ../captures/preview/tmp ../structures/castle.octa)
+```
+
+The default output is a 2×2 sheet: hero and side views on the top row, front and
+top below, using the studio camera angles. Bare names resolve to
+`structures/<name>.octa`. `-views` picks any of `hero,side,front,top`, `-size` sets
+each view in pixels and `-ss` sets supersampling. Use it to review generator changes;
+it ignores world themes, cell gap, X-ray and assembly animation, which need the GPU
+captures below.
+
 ## Screenshots and benchmarks
 
 On macOS, use the wrapper so rendering does not take focus:
@@ -121,7 +140,7 @@ the same resolution, mode, gap, and hardware. This is not a pure GPU timer.
 
 | Change | Files to consider | Verification |
 | --- | --- | --- |
-| Add a generated build | `gen/scenes/`, optional `gen/kit/`, output in `structures/`, explicit generated-build list in `tests/test_core.gd`; optional `WorldTheme` entry | Go vet/tests, regenerate, Godot core, hidden capture |
+| Add a generated build | `gen/scenes/`, optional `gen/kit/`, output in `structures/`, explicit generated-build list in `tests/test_core.gd`; optional `WorldTheme` entry | Go vet/tests, regenerate, `octapreview`, Godot core |
 | Add a primitive preset | `StructurePresets` enum/titles/descriptions/generation, toolbar icon/button loop, `OctaStudio` key handling, HUD help, tests | Update hard-coded four-preset loops, core + scene, capture |
 | Change cell mesh or edges | `TruncatedOctahedronMesh`, `cell_common.gdshaderinc`, both cell materials; `UnitGlyph` derives geometry | Topology/volume/shared-face checks, scene, solid + X-ray captures |
 | Change timing | `AssemblyTimeline` and shared shader formulas/uniforms; renderer | Timing and scene tests, partial captures via `--at` |

@@ -38,8 +38,9 @@ godot --headless --path . --script tests/test_scene.gd
 (cd gen && go test ./octa -run TestRoundTripColored)
 (cd gen && go test ./scenes -run TestScenesCompile/castle -v)
 (cd gen && go run ./cmd/octagen -list)
-(cd gen && go run ./cmd/octagen)          # Regenerate the five registered builds.
+(cd gen && go run ./cmd/octagen)          # Regenerate every registered build (~2 min).
 (cd gen && go run ./cmd/octagen castle)   # Regenerate one build.
+(cd gen && go run ./cmd/octapreview castle)  # Headless CPU preview sheet: captures/preview/castle.png
 
 # macOS: real GPU capture, hidden and without taking focus.
 tools/capture.sh --shapes=castle,cube --views=hero,front,side,top --modes=solid,xray --at=0.5
@@ -80,8 +81,8 @@ use `--bench` for forced draws plus GPU readback, rather than the HUD FPS counte
   `UnitGlyph` draws a diagram from the actual unit vertices.
 - `gen/`: `octa` supplies geometry, colored grids, ordering, and codecs; `kit`
   supplies reusable components; `scenes` composes registered recipes;
-  `cmd/octagen` writes them into `structures/`. Godot ignores this module through
-  `gen/.gdignore`.
+  `cmd/octagen` writes them into `structures/`; `cmd/octapreview` renders `.octa`
+  files to PNG on the CPU. Godot ignores this module through `gen/.gdignore`.
 
 ## Contracts to preserve
 
@@ -130,7 +131,8 @@ style. Do not hand-edit generated import caches; preserve tracked `.uid` files.
 For data/format changes, update both codecs, the format document, and relevant
 round-trip/corruption checks. For renderer/UI changes, run the Godot tests and use
 hidden GPU captures when appearance matters. For generator changes, run Go vet and
-tests, regenerate affected checked-in builds at the default density, then run the
+tests, regenerate affected checked-in builds at the default density, review them with
+`octapreview` (headless; do not launch Godot just to look at a build), then run the
 Godot core checks against those files. A new scene also needs the explicit generated
 build list in `tests/test_core.gd` updated; its world theme is optional.
 

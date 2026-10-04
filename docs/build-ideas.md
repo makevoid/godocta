@@ -548,3 +548,91 @@ Built in round 13:
 
 Selected: ★ Eilean Donan (264), ★ Blue Mosque Domes (263), ★ Offshore Oil Rig (262),
 ★ Cinque Terre Cove (265), ★ Kinderdijk Windmills (261).
+
+Built in round 14:
+
+| Build | Cells | Review |
+| --- | ---: | --- |
+| `eilean_donan` | 98,989 | Keep with bartizans, curtain wall on a rocky islet, five-arch bridge, village and heather hills |
+| `oil_rig` | 82,523 | Yellow jacket, white derrick, helideck, cranes, flare boom, supply vessel, wellhead platform |
+| `blue_mosque` | 87,952 | Dome cascade, six minarets, domed forecourt, park fountain; walls read nearly white |
+| `cinque_terre` | 103,537 | Colourful tower houses in a ravine, harbour boats, Doria tower, terraced vineyards |
+| `kinderdijk` | 99,464 | Thatched polder mills along canals with lattice sails, brick mills, pumping station; sails tangle from the side |
+
+### Round 15
+
+| # | Idea | Notes |
+| ---: | --- | --- |
+| 281 | Shwedagon Pagoda | Gilded stupa ringed by shrines on a terrace |
+| 282 | Itsukushima Shrine | Vermilion shrine piers and the floating torii |
+| 283 | Siege Camp | Trebuchets, tents and a siege tower before a besieged wall |
+| 284 | Landwasser Viaduct | Curved stone viaduct into a cliff tunnel with a train |
+| 285 | Neon City | Dense rainy tower block with signs, walkways and a monorail |
+| 286 | Rock Cut Churches | Lalibela cross-shaped church in a pit |
+| 287 | Beach Boardwalk | Pier, rides, beach huts |
+| 288 | Medieval Port Crane | Treadwheel crane on a Hanseatic quay |
+| 289 | Pagoda Garden | Japanese garden, koi pond, five-storey pagoda |
+| 290 | Windswept Lighthouse Rock | Fastnet-style tower on a sea rock |
+| 291 | Sky Fortress | Fantasy fortress on stilts over clouds |
+| 292 | Moai Quarry | (see Easter Island) |
+| 293 | Desert Caravanserai | Square inn courtyard, camels |
+| 294 | Wooden Roller Coaster | Large wooden lattice coaster |
+| 295 | Hilltop Monastery Stairs | Long stair to a mountaintop temple |
+| 296 | Brutalist Campus | Concrete blocks, plazas, pools |
+| 297 | Ancient Library | Alexandria colonnades and scroll halls |
+| 298 | Gothic Bridge Town | Charles Bridge and towers |
+| 299 | Coral Reef Wreck | Reef with a sunken ship |
+| 300 | Volcano Observatory | Domes on a volcanic summit |
+
+Selected: ★ Shwedagon Pagoda (281), ★ Itsukushima Shrine (282), ★ Siege Camp (283),
+★ Landwasser Viaduct (284), ★ Neon City (285).
+
+Built in round 15:
+
+| Build | Cells | Review |
+| --- | ---: | --- |
+| `shwedagon_pagoda` | 98,362 | Gilded stupa, satellite stupas, red-and-gold pavilions, covered stairways and chinthe gates on a wooded hill |
+| `itsukushima` | 88,608 | Vermilion O-torii in the sea, shrine halls and corridors on piers, pagoda, autumn Mt. Misen |
+| `siege_camp` | 111,634 | Trebuchets, siege tower, ram, breached wall and moat, striped pavilions; trebuchets tangle in the hero view, floating stone |
+| `landwasser_viaduct` | 92,992 | Curved six-arch viaduct into a cliff tunnel, red electric train, gorge river, spruce forest; side view is all forest |
+| `neon_city` | 101,858 | Mismatched dark towers with neon signs, sky bridges, monorail loop, highway ramp; dusk theme |
+
+### Round 16
+
+| # | Idea | Notes |
+| ---: | --- | --- |
+| 301 | Arc de Triomphe | Arch on the Étoile with radiating avenues |
+| 302 | Dinosaur Valley | Prehistoric valley with dinosaurs, volcano, ferns |
+| 303 | Ice Palace | Translucent ice castle on a frozen lake |
+| 304 | Caravanserai | Silk Road inn courtyard with camels and caravan |
+| 305 | Lalibela | Cross-shaped rock-hewn church in a pit |
+| 306 | Hanging Gardens | Terraced Babylonian gardens |
+| 307 | Mission Control | Rocket hall and crawler (overlaps Saturn V) |
+| 308 | Covered Bridge Mill | New England red covered bridge and mill |
+| 309 | Treetop Observatory | Telescope dome on a forest hill |
+| 310 | Gondola Lift Village | Ski village with lifts and chalets |
+| 311 | Pagoda Bridge | Zig-zag bridge to a lake pavilion |
+| 312 | Abandoned Factory | Overgrown brick works |
+| 313 | Medieval Abbey | Cloister, church and gardens |
+| 314 | Riverboat Town | Mississippi paddle steamer landing |
+| 315 | Coastal Fortress | Star fort by the sea |
+| 316 | Mushroom Forest | Giant fungi with tiny houses |
+| 317 | Tea Plantation | Terraced tea rows and a factory |
+| 318 | Snow Globe Village | Village inside a glass dome |
+| 319 | Ancient Harbour | Phoenician harbour with galleys |
+| 320 | Mountain Dam | Concrete arch dam and reservoir |
+
+Selected: ★ Arc de Triomphe (301), ★ Dinosaur Valley (302), ★ Ice Palace (303),
+★ Caravanserai (304), ★ Lalibela (305).
+
+Built in round 16:
+
+| Build | Cells | Review |
+| --- | ---: | --- |
+| `arc_de_triomphe` | 116,543 | Arch with tricolour and coffered vaults, Étoile traffic, ring of Haussmann blocks with mansards |
+| `dinosaur_valley` | 84,083 | Sauropod, theropod facing a ceratopsian, stegosaur, raptors and nest, volcano, waterfall, fern forest; pterosaurs float |
+| `ice_palace` | 91,300 | Blue ice-block palace with onion dome and pointed towers, frozen lake with skaters, red market stalls |
+| `caravanserai` | 96,852 | Tiled pishtaq gate, two-storey arcaded courtyard with pool pavilion, camel caravan, palms, wind-catcher cistern |
+| `lalibela` | 120,149 | Cross-shaped rock church in a deep tuff pit, hermit caves, second pit church, tukuls; busy plateau speckle |
+
+All 80 new builds are generated, integrated and passing (85 registered with the five originals).

@@ -20,7 +20,7 @@ validation limits, palette capacity, and binary layout.
 | `scripts/ui/` | Programmatically built controls, styles, unit diagram, tool palette |
 | `shaders/` | Cell motion/materials, procedural sky, ground/water |
 | `gen/` | Standalone Go module: `octa` → `kit` → `scenes` → CLI |
-| `structures/` | Five generated builds and the 15-cell `neighbors.octa` fixture |
+| `structures/` | 85 generated builds and the 15-cell `neighbors.octa` fixture |
 | `assets/` | SVG app, preset, and gallery icons with Godot import metadata |
 | `tests/` | Headless core and real-scene integration scripts |
 | `tools/` | GPU capture/benchmark script and macOS background launcher |

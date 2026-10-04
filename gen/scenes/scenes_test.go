@@ -9,6 +9,8 @@ import (
 func TestScenesCompile(t *testing.T) {
 	for _, scene := range All() {
 		t.Run(scene.Name(), func(t *testing.T) {
+			// Scenes share no mutable state, so they compile concurrently.
+			t.Parallel()
 			s, err := Compile(scene, DefaultDensity)
 			if err != nil {
 				t.Fatal(err)
