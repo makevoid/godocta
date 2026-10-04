@@ -239,23 +239,29 @@ under the original bottom layer.
 
 During a stroke `apply()` runs every 50 ms. Brush in fills up to ~1.5×radius free
 slots per tick, nearest first, that touch an occupied cell or lie on the ground
-layer. New cells take `StructureTools.brush_color`, a palette index chosen in the
-tool palette's submenu, or their neighbors' most common color when it is auto (-1);
-`OctaEditor.color_choice()` clamps it into the build's palette and always returns -1
-on uncolored builds, whose cells carry no index. `_present()` reoffers the displayed
-palette and drops a choice the new build cannot store, and the gizmo globe takes the
-painted color. Its first hit also freezes a view plane through that point, and later ticks
-take the brush center from where the mouse ray crosses it: the globe keeps its
-distance from the camera, so a stroke fills one blob and stops instead of walking
-towards the viewer, while dragging paints sideways at that depth. A tick that fills
-nothing emits `brush_full` once (`OctaStudio` shows a toast) and greys the gizmo;
-moving the brush onto free slots clears it, and releasing drops the frozen plane so
-the next click picks a new depth. Black hole removes the ball; scoop removes the
-half ball above a plane about 0.75 span under the first hit, tilted in screen space,
-and later ticks slide along that plane. `StructureRenderer.set_editing(true)` finishes any assembly and keeps
-the full buffer drawn; `hide_cell()` collapses removed originals. Added cells and
-the spiralling swallowed cells are drawn by two overlay `MultiMeshInstance3D`s that
-share the renderer's current material (rank 0, so they are always settled).
+layer. Its first hit freezes a view plane through that point, and later ticks take
+the brush center from where the mouse ray crosses it: the globe keeps its distance
+from the camera, so a stroke fills one blob and stops instead of walking towards the
+viewer, while dragging paints sideways at that depth. A tick that fills nothing
+emits `brush_full` once (`OctaStudio` shows a toast) and greys the gizmo; moving the
+brush onto free slots clears it, and releasing drops the frozen plane so the next
+click picks a new depth. Black hole removes the ball; scoop removes the half ball
+above a plane about 0.75 span under the first hit, tilted in screen space, and later
+ticks slide along that plane. `StructureRenderer.set_editing(true)` finishes any
+assembly and keeps the full buffer drawn; `hide_cell()` collapses removed originals.
+Added cells and the spiralling swallowed cells are drawn by two overlay
+`MultiMeshInstance3D`s that share the renderer's current material (rank 0, so they
+are always settled).
+
+New cells take `StructureTools.brush_color`, a palette index picked in the tool
+palette's color submenu, or their neighbors' most common color when it is auto
+(-1). `OctaEditor.color_choice()` clamps the index into the displayed build's
+palette and always returns -1 on uncolored builds, whose cells carry no index, so
+presets stay on auto with the submenu disabled. `_present()` reoffers the new
+build's palette through `ToolPalette.show_palette()` and drops a choice it cannot
+store; the gizmo globe takes the painted color. `OctaPalette` supplies the swatches
+and the Go color names, while the swatches of a colored build come from its own
+embedded palette, so the menu shows what will actually be stored.
 
 After `COMMIT_DELAY` idle seconds, or before Save/Replay, `commit()` calls
 `display(data, false, recenter = false)`, which keeps the node position and the

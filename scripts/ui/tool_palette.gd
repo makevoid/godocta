@@ -12,7 +12,7 @@ signal color_selected(index: int)
 const SHORTCUTS: Array[String] = ["V", "B", "E", "S"]
 const TIPS: Array[String] = [
 	"Left drag orbits the camera.",
-	"Paint new cells: they are attracted to the cells under the brush, or rest on the ground.",
+	"Paint new cells in the brush color: they are attracted to the cells under the brush, or rest on the ground.\nA stroke holds its distance from the camera, so it fills the globe once; click again for the next layer.",
 	"A globe that swallows every cell within its radius.",
 	"A half globe that shaves the surface without digging deep. Tilt it 45° with the arrow keys.",
 ]
