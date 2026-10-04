@@ -5,9 +5,10 @@ import (
 	"math"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
-	"runtime"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 // speed and the build swaps under motion blur while the spin carries on.
 type videoOptions struct {
 	w, h, fps, samples int
+	workers            int     // Frames rendered at once.
 	shot, swap, left   float64 // Seconds: shot length, blurred swap around each cut, assembly left.
 	turn               float64 // Orbit per shot, in radians.
 	theme              string  // world_theme.gd path, for sky, ground and light colors.
@@ -99,6 +101,7 @@ func newClip(s *octa.Structure, o videoOptions, look look) *clip {
 		yaw := c.yaw0 + (c.yaw1-c.yaw0)*float64(k)/16
 		c.dist = math.Max(c.dist, c.sc.fit(c.focus, orbit(yaw, c.pitch), aspect))
 	}
+	c.sc.faces = nil // The settled faces and shadow map replace them.
 	return c
 }
 
@@ -214,20 +217,63 @@ func hblur(img, out []float32, w, h int, blur float64) {
 	}
 }
 
-// renderVideo renders the structures as one showcase and encodes it with ffmpeg.
+// renderVideo renders the structures as one showcase and encodes it with ffmpeg. Each
+// shot is encoded to its own part under <path>.parts/ first, so an interrupted render
+// resumes from the last finished part; the parts are then joined without re-encoding.
 func renderVideo(path string, structures []*octa.Structure, names []string, o videoOptions) error {
-	clips := make([]*clip, len(structures))
-	for i, s := range structures {
-		look, ok := themeLook(o.theme, names[i])
-		clips[i] = newClip(s, o, look)
-		fmt.Printf("%s: %d cells, %d settled faces, %d in flight, theme %v\n", names[i], len(s.Cells),
-			len(clips[i].static), len(clips[i].flying), ok)
+	partsDir := path + ".parts"
+	if err := os.MkdirAll(partsDir, 0o755); err != nil {
+		return err
 	}
-	total := float64(len(clips)) * o.shot
-	frames := int(math.Round(total * float64(o.fps)))
+	clips := newClipCache(structures, names, o)
+	shots := len(structures)
+	shotFrames := func(i int) int { return int(math.Round(float64(i) * o.shot * float64(o.fps))) }
+	frames := shotFrames(shots)
+	start := time.Now()
+	var list strings.Builder
+	for p := range shots {
+		part := filepath.Join(partsDir, fmt.Sprintf("part_%03d.mp4", p))
+		abs, _ := filepath.Abs(part)
+		fmt.Fprintf(&list, "file '%s'\n", abs)
+		if _, err := os.Stat(part); err == nil {
+			fmt.Printf("%s: done\n", names[p])
+			continue
+		}
+		if p+1 < shots {
+			clips.load(p + 1) // Prefetch: this part ends in a swap into the next build.
+		}
+		tmp := filepath.Join(partsDir, fmt.Sprintf("part_%03d.tmp.mp4", p))
+		if err := renderPart(tmp, clips, shotFrames(p), shotFrames(p+1), shots, o, func(f int) {
+			fmt.Printf("\r%s: frame %d/%d (%s)  ", names[p], f+1, frames, time.Since(start).Round(time.Second))
+		}); err != nil {
+			return err
+		}
+		fmt.Println()
+		if err := os.Rename(tmp, part); err != nil {
+			return err
+		}
+		if p > 0 {
+			clips.release(p - 1) // Later parts reach back at most one build.
+		}
+	}
+	listPath := filepath.Join(partsDir, "parts.txt")
+	if err := os.WriteFile(listPath, []byte(list.String()), 0o644); err != nil {
+		return err
+	}
+	join := exec.Command("ffmpeg", "-loglevel", "error", "-y", "-f", "concat", "-safe", "0", "-i", listPath,
+		"-c", "copy", "-movflags", "+faststart", path)
+	join.Stderr = os.Stderr
+	if err := join.Run(); err != nil {
+		return err
+	}
+	return os.RemoveAll(partsDir)
+}
+
+// renderPart renders frames [f0, f1) on o.workers goroutines and encodes them to path.
+func renderPart(path string, clips *clipCache, f0, f1, shots int, o videoOptions, progress func(int)) error {
 	ffmpeg := exec.Command("ffmpeg", "-loglevel", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24",
 		"-s", fmt.Sprintf("%dx%d", o.w, o.h), "-r", strconv.Itoa(o.fps), "-i", "-",
-		"-c:v", "libx264", "-preset", "slow", "-crf", "16", "-pix_fmt", "yuv420p", "-movflags", "+faststart", path)
+		"-c:v", "libx264", "-preset", "slow", "-crf", "16", "-pix_fmt", "yuv420p", "-threads", "2", path)
 	ffmpeg.Stderr = os.Stderr
 	pipe, err := ffmpeg.StdinPipe()
 	if err != nil {
@@ -236,15 +282,17 @@ func renderVideo(path string, structures []*octa.Structure, names []string, o vi
 	if err := ffmpeg.Start(); err != nil {
 		return err
 	}
-	start := time.Now()
+	n := f1 - f0
 	jobs := make(chan int)
-	done := make([]chan []byte, frames)
+	done := make([]chan []byte, n)
 	for i := range done {
 		done[i] = make(chan []byte, 1)
 	}
+	// At most two frames per worker wait to be written, bounding memory.
+	window := make(chan struct{}, 2*o.workers)
 	mask := vignette(o.w, o.h)
 	var wg sync.WaitGroup
-	for range runtime.NumCPU() {
+	for range o.workers {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -254,27 +302,14 @@ func renderVideo(path string, structures []*octa.Structure, names []string, o vi
 			out := make([]float32, pixels)
 			buf := &depthBuffers{}
 			for f := range jobs {
-				g := (float64(f) + 0.5) / float64(o.fps)
-				i := min(int(g/o.shot), len(clips)-1)
-				tau := g - float64(i)*o.shot
-				// Signed seconds to the nearest cut between two shots.
-				d := math.Inf(1)
-				if i > 0 {
-					d = tau
-				}
-				if i+1 < len(clips) && o.shot-tau < math.Abs(d) {
-					d = tau - o.shot
-				}
-				if math.Abs(d) >= o.swap/2 {
-					clips[i].frame(tau, o.shot, o, mixBlur, mixSharp, buf)
+				p := planFrame(f, shots, o)
+				if p.prev < 0 {
+					clips.get(p.next).frame(p.tau, o.shot, o, mixBlur, mixSharp, buf)
 					copy(out, mixBlur)
 				} else {
 					// Around a cut, cross-fade the two builds at peak speed under extra
 					// sideways blur, which swells and fades with the swap.
-					prev, next := i-1, i
-					if d < 0 {
-						prev, next = i, i+1
-					}
+					d := p.tau
 					u := d / (o.swap / 2) // -1 … 1 across the swap.
 					mix := smoothstep(-0.4, 0.4, u)
 					clear(mixBlur)
@@ -289,47 +324,129 @@ func renderVideo(path string, structures []*octa.Structure, names []string, o vi
 							mixSharp[k] += sharp[k] * float32(weight)
 						}
 					}
-					add(clips[prev], o.shot+d, 1-mix)
-					add(clips[next], d, mix)
+					add(clips.get(p.prev), o.shot+d, 1-mix)
+					add(clips.get(p.next), d, mix)
 					hblur(mixBlur, out, o.w, o.h, 0.045*float64(o.w)*(1+math.Cos(math.Pi*u))/2)
 				}
 				// Blur only inside the vignette: the screen edges stay sharp.
+				rgb := make([]byte, pixels)
 				for k := range out {
 					m := mask[k/3]
-					out[k] = mixSharp[k] + m*(out[k]-mixSharp[k])
+					rgb[k] = linearToSRGB(float64(mixSharp[k] + m*(out[k]-mixSharp[k])))
 				}
-				rgb := make([]byte, pixels)
-				for k, v := range out {
-					rgb[k] = linearToSRGB(float64(v))
-				}
-				done[f] <- rgb
+				done[f-f0] <- rgb
 			}
 		}()
 	}
 	go func() {
-		for f := range frames {
+		for f := f0; f < f1; f++ {
+			window <- struct{}{}
+			for _, i := range planFrame(f, shots, o).uses() {
+				clips.load(i)
+				clips.get(i)
+			}
 			jobs <- f
 		}
 		close(jobs)
 	}()
 	var writeErr error
-	for f := range frames {
-		rgb := <-done[f]
-		done[f] = nil
+	for k := range n {
+		rgb := <-done[k]
+		done[k] = nil
+		<-window
 		if writeErr == nil {
 			_, writeErr = pipe.Write(rgb)
 		}
-		if (f+1)%30 == 0 || f+1 == frames {
-			fmt.Printf("\rframe %d/%d (%s)", f+1, frames, time.Since(start).Round(time.Second))
+		if (k+1)%10 == 0 || k+1 == n {
+			progress(f0 + k)
 		}
 	}
-	fmt.Println()
 	wg.Wait()
 	pipe.Close()
 	if err := ffmpeg.Wait(); err != nil {
 		return err
 	}
 	return writeErr
+}
+
+// framePlan says which clips a frame shows: next alone at tau, or, within a swap, prev
+// cross-fading into next with tau the signed seconds from their cut.
+type framePlan struct {
+	prev, next int
+	tau        float64
+}
+
+func (p framePlan) uses() []int {
+	if p.prev < 0 {
+		return []int{p.next}
+	}
+	return []int{p.prev, p.next}
+}
+
+func planFrame(f, shots int, o videoOptions) framePlan {
+	g := (float64(f) + 0.5) / float64(o.fps)
+	i := min(int(g/o.shot), shots-1)
+	tau := g - float64(i)*o.shot
+	if i > 0 && tau < o.swap/2 {
+		return framePlan{i - 1, i, tau}
+	}
+	if i+1 < shots && o.shot-tau < o.swap/2 {
+		return framePlan{i, i + 1, tau - o.shot}
+	}
+	return framePlan{-1, i, tau}
+}
+
+// clipCache builds clips on demand in the background, since each holds a few hundred
+// megabytes of faces and shadow map.
+type clipCache struct {
+	structures []*octa.Structure
+	names      []string
+	o          videoOptions
+	mu         sync.Mutex
+	started    []bool
+	ready      []chan struct{}
+	clips      []*clip
+}
+
+func newClipCache(structures []*octa.Structure, names []string, o videoOptions) *clipCache {
+	c := &clipCache{structures: structures, names: names, o: o, started: make([]bool, len(structures)),
+		ready: make([]chan struct{}, len(structures)), clips: make([]*clip, len(structures))}
+	for i := range c.ready {
+		c.ready[i] = make(chan struct{})
+	}
+	return c
+}
+
+// load starts building clip i unless it already has been.
+func (c *clipCache) load(i int) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.started[i] {
+		return
+	}
+	c.started[i] = true
+	go func() {
+		look, _ := themeLook(c.o.theme, c.names[i])
+		built := newClip(c.structures[i], c.o, look)
+		c.mu.Lock()
+		c.clips[i] = built
+		c.mu.Unlock()
+		close(c.ready[i])
+	}()
+}
+
+// get waits for clip i, which load must have started.
+func (c *clipCache) get(i int) *clip {
+	<-c.ready[i]
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.clips[i]
+}
+
+func (c *clipCache) release(i int) {
+	c.mu.Lock()
+	c.clips[i] = nil
+	c.mu.Unlock()
 }
 
 // themeLook reads a world's sky, ground and light colors from world_theme.gd, blending the

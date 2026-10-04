@@ -367,6 +367,7 @@ func (sc *scene) render(yaw, pitch float64, w, h, ss int) *image.RGBA {
 type depthBuffers struct {
 	invz []float32 // 1/view depth; 0 is empty.
 	ids  []int32   // Face index across the concatenated layers.
+	all  []*face   // The concatenated layers.
 }
 
 // renderLinear draws the layers of faces from the view at W×H, offsetting pixel samples by
@@ -386,12 +387,13 @@ func (sc *scene) renderLinear(layers [][]face, v view, W, H int, jx, jy, weight 
 	invz, ids := buf.invz, buf.ids
 	cx, cy := float64(W)/2-jx, float64(H)/2-jy
 	pts := make([][3]float64, 0, 6)
-	var all []*face
+	all := buf.all[:0]
 	for _, layer := range layers {
 		for fi := range layer {
 			all = append(all, &layer[fi])
 		}
 	}
+	buf.all = all
 	for fi, f := range all {
 		if f.normal.Dot(cam.Sub(f.verts[0])) <= 0 {
 			continue

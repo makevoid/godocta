@@ -60,6 +60,7 @@ go run ./cmd/octapreview -out /tmp/octa-previews ../structures/arena.octa
 | `-swap S` | 0.3 | Video seconds of the blurred cross-fade around each cut |
 | `-left S` | 1 | Assembly seconds left when each shot starts |
 | `-fps N` / `-samples N` | 30 / 8 | Video frame rate / minimum motion-blur sub-frames per frame |
+| `-workers N` / `-mem GiB` | half the CPUs / 4 | Video frames rendered at once / soft memory limit |
 | `-theme PATH` | `../scripts/rendering/world_theme.gd` | Video sky, ground and light colors |
 
 With `-video`, `-size` defaults to `1920x1080`.

@@ -107,6 +107,11 @@ theme's sky and ground:
 
 `-shot`, `-turn`, `-swap`, `-left`, `-fps` and `-samples` (minimum sub-frames per frame;
 fast orbits take more) tune it.
+Video renders run at the lowest CPU priority on half the cores (`-workers`) under a soft
+memory cap (`-mem`, GiB), and load each build only around its shot, so a 30-build
+showcase takes about an hour in under 1 GB without blocking the machine. Each shot is
+encoded to `<output>.parts/` first: after an interruption, rerun the same command to
+resume from the last finished shot; the parts are joined and removed at the end.
 
 ## Screenshots and benchmarks
 

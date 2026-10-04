@@ -21,7 +21,10 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"runtime"
+	"runtime/debug"
 	"strings"
+	"syscall"
 	"time"
 
 	"godocta/gen/octa"
@@ -47,6 +50,8 @@ func main() {
 	swap := flag.Float64("swap", 0.3, "video seconds of the blurred swap around each cut between builds")
 	turn := flag.Float64("turn", 150, "video orbit per build, in degrees")
 	left := flag.Float64("left", 1, "video assembly seconds left when each shot starts")
+	workers := flag.Int("workers", max(1, runtime.NumCPU()/2), "video frames rendered at once")
+	memory := flag.Int("mem", 4, "video soft memory limit in GiB")
 	theme := flag.String("theme", "../scripts/rendering/world_theme.gd", "world themes, for video colors")
 	flag.Parse()
 	sizeSet := false
@@ -86,7 +91,10 @@ func main() {
 			structures = append(structures, s)
 			names = append(names, strings.TrimSuffix(filepath.Base(structurePath(arg)), ".octa"))
 		}
-		o := videoOptions{w: w, h: h, fps: *fps, samples: *samples, shot: *shot, swap: *swap, left: *left,
+		// A long batch job: lowest CPU priority and a soft memory cap keep the machine usable.
+		syscall.Setpriority(syscall.PRIO_PROCESS, 0, 19)
+		debug.SetMemoryLimit(int64(*memory) << 30)
+		o := videoOptions{w: w, h: h, fps: *fps, samples: *samples, workers: max(1, *workers), shot: *shot, swap: *swap, left: *left,
 			turn: *turn * math.Pi / 180, theme: *theme}
 		if err := renderVideo(*video, structures, names, o); err != nil {
 			fmt.Fprintln(os.Stderr, err)
