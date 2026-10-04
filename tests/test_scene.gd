@@ -127,6 +127,18 @@ func _test_tools() -> void:
 	await create_timer(StructureTools.COMMIT_DELAY + 0.4).timeout
 	check(studio.renderer.structure.cell_count() > before, "Idle edits commit automatically")
 	check(tools._pending.multimesh.instance_count == 0, "Committed cells leave the pending layer")
+	# Holding the brush in one spot fills its globe and stops, then reports itself full.
+	var full := [false]
+	tools.brush_full.connect(func() -> void: full[0] = true)
+	for tick in 40:
+		tools.apply(top, Vector3.UP, Vector3.UP)
+	check(full[0], "A brush with no free slot left reports itself full")
+	var reach := tools.world_radius() + tools.editor.span()
+	var strays := 0
+	for cell: Vector3i in tools.editor._added:
+		if OctaLattice.to_world(cell, tools.editor.span()).distance_to(top) > reach:
+			strays += 1
+	check(strays == 0, "Brush fills only inside its globe")
 	tools.apply(top, Vector3.UP, Vector3.UP)
 	studio.replay()
 	check(not tools.editor.has_changes() and studio.renderer.timeline.is_running(), "Replay includes pending edits")

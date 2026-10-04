@@ -6,6 +6,7 @@ extends Node3D
 const BRUSH_IN_COLOR := Color("b9e9cb")
 const BLACK_HOLE_COLOR := Color("b7a6ff")
 const SCOOP_COLOR := Color("ffc58a")
+const FULL_COLOR := Color("8a8f99") # A saturated brush in globe.
 var _globe := MeshInstance3D.new()
 var _rim := MeshInstance3D.new()
 var _hole := MeshInstance3D.new()
@@ -44,15 +45,18 @@ func _init() -> void:
 	visible = false
 
 ## Place the brush. axis is the scoop's dome direction (zero for a full globe); center is
-## the globe's center or the scoop's cut-plane center. active brightens it during a stroke.
-func show_brush(tool: StructureTools.Tool, center: Vector3, radius: float, axis: Vector3, active: bool, delta: float) -> void:
+## the globe's center or the scoop's cut-plane center. active brightens it during a stroke;
+## full dims it to a grey shell when the brush has nothing left to fill.
+func show_brush(tool: StructureTools.Tool, center: Vector3, radius: float, axis: Vector3, active: bool, delta: float, full: bool = false) -> void:
 	visible = tool != StructureTools.Tool.NAVIGATE
 	if not visible:
 		return
 	var scoop := tool == StructureTools.Tool.SCOOP
 	var color := SCOOP_COLOR if scoop else (BLACK_HOLE_COLOR if tool == StructureTools.Tool.BLACK_HOLE else BRUSH_IN_COLOR)
+	if full:
+		color = color.lerp(FULL_COLOR, 0.8)
 	_shell_material.set_shader_parameter("tint", color)
-	_shell_material.set_shader_parameter("intensity", 1.6 if active else 1.0)
+	_shell_material.set_shader_parameter("intensity", (0.55 if full else 1.6) if active else 1.0)
 	_rim_material.set_shader_parameter("tint", color)
 	var up := axis if scoop else Vector3.UP
 	transform = Transform3D(Basis(Quaternion(Vector3.UP, up.normalized())).scaled(Vector3.ONE * radius), center)

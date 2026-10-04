@@ -37,6 +37,7 @@ func _ready() -> void:
 	hud.tools.radius_changed.connect(set_brush_radius)
 	hud.tools.tilt_changed.connect(set_scoop_tilt)
 	tools.committed.connect(hud.show_counts)
+	tools.brush_full.connect(func() -> void: hud.notify("Brush full here — release, then click again for another layer"))
 	_save_dialog = _make_dialog(FileDialog.FILE_MODE_SAVE_FILE)
 	_save_dialog.file_selected.connect(_save_structure)
 	_load_dialog = _make_dialog(FileDialog.FILE_MODE_OPEN_FILE)

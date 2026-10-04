@@ -2,7 +2,11 @@ class_name StructureTools
 extends Node3D
 ## Brush tools that edit the displayed structure in place.
 ##  · Brush in: empty slots under the brush that touch existing cells (or the ground)
-##    fill with new cells, which fly in and snap to the cells that attract them.
+##    fill with new cells, which fly in and snap to the cells that attract them. The
+##    brush freezes its distance from the camera for the stroke, so a blob fills the
+##    globe and stops instead of creeping towards the viewer; dragging paints sideways
+##    at that depth. When nothing is left to fill, `brush_full` reports the stroke is
+##    done: release and click again to lay the next layer.
 ##  · Black hole: a globe that swallows every cell within its radius.
 ##  · Scoop: a half globe, flat or tilted 45° around the screen's X and Y axes, that
 ##    shaves cells off the surface. Its cut plane is fixed for a stroke, so holding or
@@ -12,6 +16,8 @@ extends Node3D
 ## has been idle for COMMIT_DELAY, then one rebuilt structure replaces the old one.
 
 signal committed(structure: OctaStructure)
+## The brush in stroke has nothing left to fill at its current position.
+signal brush_full
 
 enum Tool { NAVIGATE, BRUSH_IN, BLACK_HOLE, SCOOP }
 const NAMES: Array[String] = ["Orbit", "Brush in", "Black hole", "Scoop"]
@@ -40,6 +46,7 @@ var _pending_dirty: bool = false
 var _stroking: bool = false
 var _stroke_axis: Vector3 = Vector3.UP
 var _stroke_plane: Variant = null # Plane, set by the stroke's first hit.
+var _saturated: bool = false # The brush found no free slot on its last tick.
 var _tick: float = 0.0
 var _commit_timer: float = 0.0
 var _clock: float = 0.0
@@ -74,6 +81,8 @@ func world_radius() -> float:
 ## Discard pending edits, e.g. when another structure is presented.
 func reset() -> void:
 	_stroking = false
+	_stroke_plane = null
+	_saturated = false
 	_commit_timer = 0.0
 	_arrivals.clear()
 	_swallowed.clear()
@@ -137,6 +146,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.pressed and not event.shift_pressed and not event.alt_pressed:
 			_stroking = true
 			_stroke_plane = null
+			_saturated = false
 			_stroke_axis = scoop_axis()
 			_tick = 0.0
 			get_viewport().set_input_as_handled()
@@ -166,6 +176,9 @@ func _process(delta: float) -> void:
 
 func _end_stroke() -> void:
 	_stroking = false
+	# The next stroke picks its own depth and cut plane from its first hit.
+	_stroke_plane = null
+	_saturated = false
 
 func _ensure_editor() -> bool:
 	if renderer.structure == null:
@@ -206,12 +219,25 @@ func _update_brush(delta: float) -> void:
 		else:
 			gizmo.visible = false
 			return
+	elif tool == Tool.BRUSH_IN:
+		# Freeze the brush's distance from the camera: the blob it fills cannot walk
+		# towards the viewer, and dragging slides the globe sideways at that depth.
+		if _stroking and _stroke_plane == null and not hit.is_empty():
+			_stroke_plane = Plane(-direction, hit.point)
+		var at_depth: Variant = (_stroke_plane as Plane).intersects_ray(origin, direction) if _stroke_plane != null else null
+		if at_depth != null:
+			center = at_depth
+		elif not hit.is_empty():
+			center = hit.point
+		else:
+			gizmo.visible = false
+			return
 	elif hit.is_empty():
 		gizmo.visible = false
 		return
 	else:
 		center = hit.point
-	gizmo.show_brush(tool, center, world_radius(), axis, _stroking, delta)
+	gizmo.show_brush(tool, center, world_radius(), axis, _stroking, delta, _stroking and _saturated)
 	if _stroking:
 		_tick -= delta
 		if _tick <= 0.0:
@@ -221,6 +247,7 @@ func _update_brush(delta: float) -> void:
 func _brush_in(center: Vector3, toward: Vector3) -> void:
 	var span := editor.span()
 	var count := maxi(1, roundi(radius * 1.5))
+	var filled := 0
 	for cell in editor.free_slots(center, world_radius(), count):
 		var color := editor.color_for(cell, _fallback_color)
 		if not editor.add(cell, color):
@@ -230,7 +257,14 @@ func _brush_in(center: Vector3, toward: Vector3) -> void:
 		var scatter := Vector3(_random.randf_range(-1, 1), _random.randf_range(-1, 1), _random.randf_range(-1, 1))
 		var from := target + toward.normalized() * world_radius() * 1.3 + scatter * world_radius() * 0.6
 		_arrivals[cell] = {"from": from, "to": target, "born": _clock, "custom": _custom(target, color)}
+		filled += 1
 	_pending_dirty = true
+	# The globe is full: report it once, and again only after the brush moves on.
+	if filled > 0:
+		_saturated = false
+	elif not _saturated:
+		_saturated = true
+		brush_full.emit()
 
 func _swallow(cells: Array[Vector3i], center: Vector3) -> void:
 	var span := editor.span()
