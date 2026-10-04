@@ -55,6 +55,14 @@ go run ./cmd/octapreview -out /tmp/octa-previews ../structures/arena.octa
 | `-views LIST` | `hero,side,front,top` | Studio camera views, laid out two per row |
 | `-size WxH` | `1000x640` | Pixel size of each view |
 | `-ss N` | 2 | Supersampling factor per axis |
+| `-video PATH` | — | Render one showcase MP4 of all inputs with `ffmpeg` instead of PNGs |
+| `-shot S` / `-turn DEG` | 4 / 150 | Video seconds and orbit degrees per build |
+| `-swap S` | 0.3 | Video seconds of the blurred cross-fade around each cut |
+| `-left S` | 1 | Assembly seconds left when each shot starts |
+| `-fps N` / `-samples N` | 30 / 8 | Video frame rate / minimum motion-blur sub-frames per frame |
+| `-theme PATH` | `../scripts/rendering/world_theme.gd` | Video sky, ground and light colors |
+
+With `-video`, `-size` defaults to `1920x1080`.
 | Positional args | required | Bare names resolve to `../structures/<name>.octa`; paths are read as given |
 
 It draws exposed cell faces with flat shading and sun shadows over a neutral ground

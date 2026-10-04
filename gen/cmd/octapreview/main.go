@@ -4,9 +4,13 @@
 //
 //	go run ./cmd/octapreview castle                   # ../captures/preview/castle.png
 //	go run ./cmd/octapreview -views hero -size 1600x1000 ../structures/arena.octa
+//	go run ./cmd/octapreview -video ../captures/showcase.mp4 castle arena cube
 //
 // Sheet layout: hero, side on the top row; front, top below. Names without a slash or
 // extension resolve to ../structures/<name>.octa.
+//
+// -video renders one MP4 (through ffmpeg) instead: each build orbits fast, slows while its
+// last cells land and speeds up again; the builds swap at full speed under motion blur.
 package main
 
 import (
@@ -14,6 +18,7 @@ import (
 	"fmt"
 	"image"
 	"image/png"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -35,7 +40,20 @@ func main() {
 	viewList := flag.String("views", "hero,side,front,top", "comma-separated views: hero, front, side, top")
 	size := flag.String("size", "1000x640", "size of each view in pixels")
 	ss := flag.Int("ss", 2, "supersampling factor per axis")
+	video := flag.String("video", "", "render one showcase MP4 of all the builds to this path")
+	fps := flag.Int("fps", 30, "video frames per second")
+	samples := flag.Int("samples", 8, "video samples per frame, for motion blur and antialiasing")
+	shot := flag.Float64("shot", 4, "video seconds per build")
+	swap := flag.Float64("swap", 0.3, "video seconds of the blurred swap around each cut between builds")
+	turn := flag.Float64("turn", 150, "video orbit per build, in degrees")
+	left := flag.Float64("left", 1, "video assembly seconds left when each shot starts")
+	theme := flag.String("theme", "../scripts/rendering/world_theme.gd", "world themes, for video colors")
 	flag.Parse()
+	sizeSet := false
+	flag.Visit(func(f *flag.Flag) { sizeSet = sizeSet || f.Name == "size" })
+	if *video != "" && !sizeSet {
+		*size = "1920x1080"
+	}
 	var w, h int
 	if _, err := fmt.Sscanf(*size, "%dx%d", &w, &h); err != nil || w < 16 || h < 16 {
 		fmt.Fprintln(os.Stderr, "bad -size:", *size)
@@ -52,16 +70,39 @@ func main() {
 		fmt.Fprintln(os.Stderr, "usage: octapreview [flags] name|file.octa ...")
 		os.Exit(2)
 	}
+	if *video != "" {
+		if *shot <= *swap || *fps < 1 || *samples < 1 {
+			fmt.Fprintln(os.Stderr, "-shot must exceed -swap; -fps and -samples must be positive")
+			os.Exit(2)
+		}
+		var structures []*octa.Structure
+		var names []string
+		for _, arg := range flag.Args() {
+			s, err := octa.ReadFile(structurePath(arg))
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%s: %v\n", arg, err)
+				os.Exit(1)
+			}
+			structures = append(structures, s)
+			names = append(names, strings.TrimSuffix(filepath.Base(structurePath(arg)), ".octa"))
+		}
+		o := videoOptions{w: w, h: h, fps: *fps, samples: *samples, shot: *shot, swap: *swap, left: *left,
+			turn: *turn * math.Pi / 180, theme: *theme}
+		if err := renderVideo(*video, structures, names, o); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		abs, _ := filepath.Abs(*video)
+		fmt.Println("→", abs)
+		return
+	}
 	if err := os.MkdirAll(*out, 0o755); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 	failed := false
 	for _, arg := range flag.Args() {
-		path := arg
-		if !strings.ContainsRune(arg, '/') && filepath.Ext(arg) == "" {
-			path = filepath.Join("..", "structures", arg+".octa")
-		}
+		path := structurePath(arg)
 		start := time.Now()
 		s, err := octa.ReadFile(path)
 		if err != nil {
@@ -98,6 +139,14 @@ func main() {
 	if failed {
 		os.Exit(1)
 	}
+}
+
+// structurePath resolves a bare build name to ../structures/<name>.octa.
+func structurePath(arg string) string {
+	if !strings.ContainsRune(arg, '/') && filepath.Ext(arg) == "" {
+		return filepath.Join("..", "structures", arg+".octa")
+	}
+	return arg
 }
 
 func writePNG(path string, img image.Image) error {

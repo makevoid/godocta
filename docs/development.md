@@ -93,6 +93,21 @@ each view in pixels and `-ss` sets supersampling. Use it to review generator cha
 it ignores world themes, cell gap, X-ray and assembly animation, which need the GPU
 captures below.
 
+`-video` renders a showcase MP4 through `ffmpeg` instead (1920×1080 at 30 fps by
+default, about 2.5 minutes for three 100k-cell builds on ten cores). Each build gets a
+4-second, 150° low orbit around its center of mass. The orbit bursts fast around each
+cut and drifts slowly mid-shot while the final second of assembly lands. Shots meet at
+the same spin speed, so each build swaps for the next under rotational and sideways
+motion blur while the camera keeps turning; a circular mask keeps the screen edges sharp. Cells use the shader's flight motion, outlines and the world
+theme's sky and ground:
+
+```sh
+(cd gen && go run ./cmd/octapreview -video ../captures/showcase.mp4 shwedagon_pagoda rothenburg blue_mosque)
+```
+
+`-shot`, `-turn`, `-swap`, `-left`, `-fps` and `-samples` (minimum sub-frames per frame;
+fast orbits take more) tune it.
+
 ## Screenshots and benchmarks
 
 On macOS, use the wrapper so rendering does not take focus:
