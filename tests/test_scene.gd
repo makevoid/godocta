@@ -145,8 +145,40 @@ func _test_tools() -> void:
 	tools.apply(top, Vector3.UP, Vector3.UP)
 	studio.select_preset(StructurePresets.Shape.CUBE)
 	check(studio.renderer.structure.cell_count() == 1729 and tools.editor == null, "Switching builds discards pending edits")
+	_test_brush_colors()
 	studio.select_tool(StructureTools.Tool.NAVIGATE)
 	studio.set_scoop_tilt(Vector2i.ZERO)
+
+## The brush color submenu: auto on uncolored builds, one palette color on colored ones.
+func _test_brush_colors() -> void:
+	var tools := studio.tools
+	var menu := studio.hud.tools.color_menu
+	menu.get_popup().id_pressed.emit(5)
+	check(tools.brush_color == -1 and menu.disabled, "Uncolored builds keep the brush on auto")
+	var swatch := OctaStructure.from_cells(PackedInt32Array([0, 0, 0, 2, 0, 0]), "Swatch")
+	swatch.set_colors(PackedByteArray([0, 0]), OctaPalette.colors())
+	studio._present(swatch)
+	check(not menu.disabled and tools.brush_color == -1, "A colored build opens the submenu, still on auto")
+	studio.select_tool(StructureTools.Tool.BRUSH_IN)
+	studio.set_brush_radius(1.5)
+	tools.apply(OctaLattice.to_world(Vector3i.ZERO, swatch.cell_span), Vector3.UP, Vector3.UP)
+	var auto_cells: Array = tools.editor._added.keys()
+	var voted := not auto_cells.is_empty()
+	for cell: Vector3i in auto_cells:
+		voted = voted and tools.editor.color_of(cell) == 0
+	check(voted, "Auto strokes copy their neighbors' color")
+	menu.get_popup().id_pressed.emit(13)
+	check(tools.brush_color == 12, "The submenu picks a palette color")
+	check(menu.text == "Gold" and tools.gizmo.brush_tint != null, "The button and the gizmo show it")
+	tools.apply(OctaLattice.to_world(Vector3i(2, 0, 0), swatch.cell_span), Vector3.UP, Vector3.UP)
+	var gold := 0
+	for cell: Vector3i in tools.editor._added:
+		gold += 1 if tools.editor.color_of(cell) == 12 else 0
+	check(gold > 0 and gold == tools.editor._added.size() - auto_cells.size(), "Strokes paint the chosen color")
+	menu.get_popup().id_pressed.emit(0)
+	check(tools.brush_color == -1 and tools.gizmo.brush_tint == null, "Auto comes back from the submenu")
+	studio.select_preset(StructurePresets.Shape.CUBE)
+	check(tools.brush_color == -1 and menu.disabled, "An uncolored build falls back to auto")
 
 func _capture(name: String) -> void:
 	await RenderingServer.frame_post_draw

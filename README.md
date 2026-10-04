@@ -39,11 +39,12 @@ Tested with Godot **4.7.2**. No addons, external packages, or C# runtime are req
 | Cell separation | Reveal individual cells; zero gives exact face-to-face tiling |
 | Save / Load | Write or open a compact `.octa` arrangement |
 | Orbit / **V** or **Esc** | Navigation only: left drag orbits |
-| Brush in / **B** | Paint cells in: new cells fly in and snap to the cells under the brush (or rest on the ground) and adopt their neighbors' color. A stroke keeps the brush at the depth of its first hit, so it fills that globe and stops; drag to paint sideways, and when the globe is full the gizmo greys out and a toast asks for another click |
+| Brush in / **B** | Paint cells in: new cells fly in and snap to the cells under the brush (or rest on the ground) and take the brush color. A stroke keeps the brush at the depth of its first hit, so it fills that globe and stops; drag to paint sideways, and when the globe is full the gizmo greys out and a toast asks for another click |
 | Black hole / **E** | A globe that swallows every cell within its radius |
 | Scoop / **S** | A half globe that shaves the surface about one layer deep; its cut plane is fixed per stroke so dragging planes the build |
 | **←/→**, **↑/↓** | Tilt the scoop 45° around the screen X / Y axes (flat by default) |
 | **[** / **]** or Brush size | Shrink / grow the brush (0.6–12 cells) |
+| Brush color | Submenu: auto (new cells copy the cells they grow from) or one of the 16 base palette colors. Uncolored presets stay on auto |
 | Right drag, or Alt + drag | Orbit while a tool is active |
 
 ## The cell is the unit of data

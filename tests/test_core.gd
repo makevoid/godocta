@@ -279,6 +279,10 @@ func _test_editor() -> void:
 	var paint_editor := OctaEditor.new(painted)
 	check(paint_editor.color_for(Vector3i(4, 0, 0)) == 1, "New cells adopt their neighbor's color")
 	check(paint_editor.color_for(Vector3i(20, 0, 0), 1) == 1, "Unattached cells use the fallback color")
+	check(paint_editor.color_choice(Vector3i(4, 0, 0), 0, 1) == 0, "The brush paints the chosen color")
+	check(paint_editor.color_choice(Vector3i(4, 0, 0), 9, 1) == 1, "A color outside the palette clamps into it")
+	check(paint_editor.color_choice(Vector3i(4, 0, 0), -1, 0) == 1, "Auto keeps the neighbors' vote")
+	check(editor.color_choice(slots[1], 3, 0) == -1, "Uncolored builds ignore the chosen color")
 	paint_editor.add(Vector3i(4, 0, 0), paint_editor.color_for(Vector3i(4, 0, 0)))
 	paint_editor.remove(Vector3i(1, 1, 1))
 	var repainted := paint_editor.build()
@@ -327,6 +331,7 @@ func _test_generated_builds() -> void:
 		if structure == null:
 			continue
 		check(structure.is_colored() and structure.palette.size() <= 16, "%s is colored with at most 16 colors" % name)
+		check(structure.palette == OctaPalette.colors(), "%s embeds the base palette the brush menu names" % name)
 		var last_y: int = -(1 << 30)
 		var sorted := true
 		for index in structure.cell_count():

@@ -166,7 +166,7 @@ the same resolution, mode, gap, and hardware. This is not a pure GPU timer.
 | Change timing | `AssemblyTimeline` and shared shader formulas/uniforms; renderer | Timing and scene tests, partial captures via `--at` |
 | Change environment | `WorldTheme`, `StudioEnvironment`, sky/ground shaders | Scene theme wiring, themed hero/side captures |
 | Change data or format | Both codecs/validators, `docs/octa-format.md`, relevant GDScript/Go tests | Both language suites and checked-in generated files |
-| Change brush tools | `OctaEditor`, `StructureTools`, `BrushGizmo`, `ToolPalette`, `brush`/`black_hole` shaders, `OctaStudio` keys | Core editor checks, scene `_test_tools()`, hidden GPU capture of the gizmo |
+| Change brush tools | `OctaEditor`, `StructureTools`, `BrushGizmo`, `ToolPalette`, `OctaPalette`, `brush`/`black_hole` shaders, `OctaStudio` keys | Core editor checks, scene `_test_tools()`, hidden GPU capture of the gizmo |
 | Change controls | `StudioHUD`, `StructureToolbar`, `StudioTheme`, `OrbitCamera`, `OctaStudio` signal wiring | Scene tests, native input/dialog inspection, README controls |
 
 For a new Go scene, follow the complete example in the [generator guide](../gen/README.md).

@@ -36,6 +36,7 @@ func _ready() -> void:
 	hud.tools.tool_selected.connect(select_tool)
 	hud.tools.radius_changed.connect(set_brush_radius)
 	hud.tools.tilt_changed.connect(set_scoop_tilt)
+	hud.tools.color_selected.connect(set_brush_color)
 	tools.committed.connect(hud.show_counts)
 	tools.brush_full.connect(func() -> void: hud.notify("Brush full here — release, then click again for another layer"))
 	_save_dialog = _make_dialog(FileDialog.FILE_MODE_SAVE_FILE)
@@ -53,6 +54,9 @@ func _present(structure: OctaStructure, preset: int = -1) -> void:
 	tools.reset()
 	hud.show_structure(structure, preset)
 	renderer.display(structure)
+	# Palettes differ between builds: keep the chosen color only while it still exists.
+	hud.tools.show_palette(structure.palette)
+	set_brush_color(tools.brush_color)
 	var box := structure.bounds()
 	environment.apply_theme(WorldTheme.STUDIO if preset >= 0 else WorldTheme.name_for(structure.title))
 	camera.default_pitch = 0.48 if environment.theme_name == WorldTheme.STUDIO else 0.24
@@ -92,6 +96,11 @@ func select_tool(tool: StructureTools.Tool) -> void:
 func set_brush_radius(cells: float) -> void:
 	tools.set_radius(cells)
 	hud.tools.show_radius(tools.radius)
+
+## -1 lets the brush adopt neighbors' colors; 0..15 paints one color of the build's palette.
+func set_brush_color(index: int) -> void:
+	tools.set_brush_color(index)
+	hud.tools.show_color(tools.brush_color)
 
 func set_scoop_tilt(tilt: Vector2i) -> void:
 	tools.tilt = tilt.clamp(Vector2i(-45, -45), Vector2i(45, 45))

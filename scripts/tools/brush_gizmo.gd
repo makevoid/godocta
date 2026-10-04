@@ -13,6 +13,8 @@ var _hole := MeshInstance3D.new()
 var _shell_material := ShaderMaterial.new()
 var _rim_material := ShaderMaterial.new()
 var _hole_material := ShaderMaterial.new()
+## The painted color, tinting the brush in globe; null while the brush picks colors itself.
+var brush_tint: Variant = null
 var _strength: float = 0.3
 
 func _init() -> void:
@@ -53,6 +55,9 @@ func show_brush(tool: StructureTools.Tool, center: Vector3, radius: float, axis:
 		return
 	var scoop := tool == StructureTools.Tool.SCOOP
 	var color := SCOOP_COLOR if scoop else (BLACK_HOLE_COLOR if tool == StructureTools.Tool.BLACK_HOLE else BRUSH_IN_COLOR)
+	if tool == StructureTools.Tool.BRUSH_IN and brush_tint != null:
+		# Show the painted color, lifted towards the holographic shell's brightness.
+		color = (brush_tint as Color).lerp(Color.WHITE, 0.25)
 	if full:
 		color = color.lerp(FULL_COLOR, 0.8)
 	_shell_material.set_shader_parameter("tint", color)

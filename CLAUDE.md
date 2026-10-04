@@ -68,7 +68,8 @@ use `--bench` for forced draws plus GPU readback, rather than the HUD FPS counte
   camera, HUD, and file dialogs and connects their signals.
 - `scripts/data/`: `OctaLattice` owns coordinate rules; `OctaStructure` owns packed
   data; `OctaStructureBuilder` is mutable authoring; `StructurePresets` creates the
-  four primitives; `OctaFile` reads/writes files.
+  four primitives; `OctaFile` reads/writes files; `OctaPalette` mirrors Go's 16-color
+  base palette for the UI (names and swatches only; files stay self-describing).
 - `scripts/geometry/`: `TruncatedOctahedronMesh` caches one indexed unit mesh with
   72 face vertices, 132 indices, and 44 triangles.
 - `scripts/rendering/`: `StructureRenderer` derives instance buffers;
@@ -103,6 +104,8 @@ use `--bench` for forced draws plus GPU readback, rather than the HUD FPS counte
    16 floats: 12 transform values plus rank, seed, normalized height, and palette
    index (`-1` for uncolored). Mesh UV/UV2 and this layout are shader interfaces.
    Convert palette sRGB values to linear on upload; array uniforms do not do it.
+   Painting uses the displayed `OctaStructure.palette`; `scripts/data/octa_palette.gd`
+   only names those indices and must stay in step with `gen/octa/palette.go`.
 5. **Animation:** `AssemblyTimeline` and `shaders/cell_common.gdshaderinc` share the
    inverse-quadratic release and cubic ease-out formulas. Duration scales with the
    cube root of cell count, clamped to 4–24 seconds. Keep both materials' uniforms

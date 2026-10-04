@@ -63,7 +63,8 @@ the current build. Successful saves refresh the gallery.
 | [OctaLattice](../scripts/data/octa_lattice.gd) | `RefCounted` | `is_valid()`, `to_world()`, `NEIGHBORS`, coordinate cap |
 | [OctaStructure](../scripts/data/octa_structure.gd) | `RefCounted` | Validated packed triples; `from_cells()`, `validation_error()`, `set_colors()`, `color_error()`, getters, `storage_bytes()`, `bounds()` |
 | [OctaStructureBuilder](../scripts/data/octa_structure_builder.gd) | `RefCounted` | Mutable occupancy dictionary; `add()`, `remove()`, `contains()`, `build()` sorted by Y/Z/X |
-| [OctaEditor](../scripts/data/octa_editor.gd) | `RefCounted` | Pending edits over one structure: `pick()` ray march, `cells_within()` globe/half globe, `free_slots()` attached growth, `add()`/`remove()`, `color_for()`, `build()` |
+| [OctaEditor](../scripts/data/octa_editor.gd) | `RefCounted` | Pending edits over one structure: `pick()` ray march, `cells_within()` globe/half globe, `free_slots()` attached growth, `add()`/`remove()`, `color_for()`/`color_choice()`, `build()` |
+| [OctaPalette](../scripts/data/octa_palette.gd) | `RefCounted` | The 16-color base palette mirrored from Go: `HEX`, `NAMES`, `colors()`, `name_of()`; UI swatches and color names only |
 | [OctaFile](../scripts/data/octa_file.gd) | `RefCounted` | `save_structure()` returns a Godot `Error`; `load_structure()` returns data or `null`; `last_error` explains failures |
 | [StructurePresets](../scripts/data/structure_presets.gd) | `RefCounted` | Shape enum, titles/descriptions, `generate()`, `mostly_inside()`, cached volume samples |
 | [TruncatedOctahedronMesh](../scripts/geometry/truncated_octahedron_mesh.gd) | `RefCounted` | Unit `vertices()`, `face_normals()`, cached `shared_mesh()` |
@@ -74,7 +75,7 @@ the current build. Successful saves refresh the gallery.
 | [WorldTheme](../scripts/rendering/world_theme.gd) | `RefCounted` | `name_for()` title lookup, `themes()` dictionaries, studio and shared afternoon defaults |
 | [StructureTools](../scripts/tools/structure_tools.gd) | `Node3D` | Tool enum, stroke input, `apply()`, `commit()`, `reset()`, pending-cell and black-hole overlays |
 | [BrushGizmo](../scripts/tools/brush_gizmo.gd) | `Node3D` | Globe/dome brush outline, scoop cut-plane ring, billboard black hole |
-| [ToolPalette](../scripts/ui/tool_palette.gd) | `PanelContainer` | Tool buttons, brush size, scoop tilt; `show_tool()`, `show_radius()`, `show_tilt()` |
+| [ToolPalette](../scripts/ui/tool_palette.gd) | `PanelContainer` | Tool buttons, brush size, brush color submenu, scoop tilt; `show_tool()`, `show_radius()`, `show_palette()`, `show_color()`, `show_tilt()` |
 | [StudioHUD](../scripts/ui/studio_hud.gd) | `CanvasLayer` | `show_structure()`, `show_progress()`, `set_xray()`, `notify()`; status, view controls, toasts and FPS |
 | [StructureToolbar](../scripts/ui/structure_toolbar.gd) | `PanelContainer` | Preset buttons, `refresh_gallery()`, `select_shape()`, `gallery_paths`, action signals |
 | [StudioTheme](../scripts/ui/studio_theme.gd) | `RefCounted` | Color constants and `create()`, `panel()`, `label()`, `button()` factories |
@@ -238,7 +239,12 @@ under the original bottom layer.
 
 During a stroke `apply()` runs every 50 ms. Brush in fills up to ~1.5×radius free
 slots per tick, nearest first, that touch an occupied cell or lie on the ground
-layer. Its first hit also freezes a view plane through that point, and later ticks
+layer. New cells take `StructureTools.brush_color`, a palette index chosen in the
+tool palette's submenu, or their neighbors' most common color when it is auto (-1);
+`OctaEditor.color_choice()` clamps it into the build's palette and always returns -1
+on uncolored builds, whose cells carry no index. `_present()` reoffers the displayed
+palette and drops a choice the new build cannot store, and the gizmo globe takes the
+painted color. Its first hit also freezes a view plane through that point, and later ticks
 take the brush center from where the mouse ray crosses it: the globe keeps its
 distance from the camera, so a stroke fills one blob and stops instead of walking
 towards the viewer, while dragging paints sideways at that depth. A tick that fills

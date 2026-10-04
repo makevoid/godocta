@@ -7,6 +7,7 @@ extends Node3D
 ##    globe and stops instead of creeping towards the viewer; dragging paints sideways
 ##    at that depth. When nothing is left to fill, `brush_full` reports the stroke is
 ##    done: release and click again to lay the next layer.
+##    Cells take the brush color, or their neighbors' color when it is auto (-1).
 ##  · Black hole: a globe that swallows every cell within its radius.
 ##  · Scoop: a half globe, flat or tilted 45° around the screen's X and Y axes, that
 ##    shaves cells off the surface. Its cut plane is fixed for a stroke, so holding or
@@ -32,6 +33,8 @@ const MAX_SWALLOWED := 2500 # Larger bites vanish without the flight.
 var tool: Tool = Tool.NAVIGATE
 ## Brush radius in cell spans.
 var radius: float = 2.0
+## Palette index the brush paints, or -1 for auto: each new cell adopts its neighbors' color.
+var brush_color: int = -1
 ## Scoop tilt in degrees around the screen X and Y axes: -45, 0 or 45 each.
 var tilt: Vector2i = Vector2i.ZERO
 var renderer: StructureRenderer
@@ -73,6 +76,13 @@ func set_tool(value: Tool) -> void:
 
 func set_radius(cells: float) -> void:
 	radius = clampf(cells, MIN_RADIUS, MAX_RADIUS)
+
+## Pick the painted color: a palette index, or -1 to keep adopting neighbors' colors.
+## Indices outside the displayed palette, and any color on an uncolored build, fall to auto.
+func set_brush_color(index: int) -> void:
+	var palette := renderer.structure.palette if renderer != null and renderer.structure != null else PackedColorArray()
+	brush_color = index if index >= 0 and index < palette.size() else -1
+	gizmo.brush_tint = palette[brush_color] if brush_color >= 0 else null
 
 ## Brush radius in structure-space units.
 func world_radius() -> float:
@@ -249,7 +259,7 @@ func _brush_in(center: Vector3, toward: Vector3) -> void:
 	var count := maxi(1, roundi(radius * 1.5))
 	var filled := 0
 	for cell in editor.free_slots(center, world_radius(), count):
-		var color := editor.color_for(cell, _fallback_color)
+		var color := editor.color_choice(cell, brush_color, _fallback_color)
 		if not editor.add(cell, color):
 			continue
 		var target := OctaLattice.to_world(cell, span)

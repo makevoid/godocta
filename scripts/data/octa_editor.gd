@@ -90,6 +90,15 @@ func color_for(cell: Vector3i, fallback: int = 0) -> int:
 				best = color
 	return best if best >= 0 else clampi(fallback, 0, maxi(structure.palette.size() - 1, 0))
 
+## The palette index a new cell takes: the chosen color when it is in the palette, else
+## its neighbors' vote. Uncolored structures always return -1, whatever is chosen.
+func color_choice(cell: Vector3i, chosen: int, fallback: int = 0) -> int:
+	if not structure.is_colored():
+		return -1
+	if chosen >= 0:
+		return mini(chosen, structure.palette.size() - 1)
+	return color_for(cell, fallback)
+
 ## Occupied cells whose centers lie within radius. A nonzero axis keeps only the half on
 ## its side of the plane through center: the scoop's half sphere.
 func cells_within(center: Vector3, radius: float, axis: Vector3 = Vector3.ZERO) -> Array[Vector3i]:
