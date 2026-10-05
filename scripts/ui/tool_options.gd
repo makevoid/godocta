@@ -47,7 +47,7 @@ func _ready() -> void:
 	_build_size()
 	_build_colors()
 	_build_tilt()
-	show_radius(2.0)
+	show_radius(float(StructureTools.DEFAULT_RADII[StructureTools.Tool.BRUSH_IN]))
 	show_tilt(Vector2i.ZERO)
 	show_color(-1)
 	show_tool(StructureTools.Tool.NAVIGATE)

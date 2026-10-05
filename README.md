@@ -42,7 +42,7 @@ Tested with Godot **4.7.2**. No addons, external packages, or C# runtime are req
 | Black hole / **E** | A globe that swallows every cell within its radius |
 | Scoop / **S** | A half globe that shaves the surface about one layer deep; its cut plane is fixed per stroke so dragging planes the build. Enable it in Settings first |
 | **←/→**, **↑/↓** | Tilt the scoop 45° around the screen X / Y axes (flat by default) |
-| **[** / **]** or Brush size | Shrink / grow the brush (0.6–12 cells) |
+| **[** / **]** or Brush size | Shrink / grow the brush (0.6–12 cells). Brush in and the black hole start at 3 cells, the scoop at 2, and each tool keeps the last size it was used at |
 | Brush color | Auto (new cells copy the cells they grow from) or one of the build's palette colors: eight swatches, with More for all 16. Uncolored presets stay on auto |
 | Right drag, or Alt + drag | Orbit while a tool is active |
 

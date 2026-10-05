@@ -128,8 +128,14 @@ func _test_tools() -> void:
 	tools.commit()
 	check(studio.renderer.structure.cell_count() < eaten, "Scoop shaves cells")
 	var before := studio.renderer.structure.cell_count()
-	studio.set_brush_radius(1.5)
 	studio.hud.tools.tool_buttons[StructureTools.Tool.BRUSH_IN].pressed.emit()
+	check(is_equal_approx(tools.radius, 3.0), "The brush starts at three cells")
+	studio.set_brush_radius(1.5)
+	studio.select_tool(StructureTools.Tool.BLACK_HOLE)
+	check(is_equal_approx(tools.radius, 3.0), "Each tool keeps its own size")
+	studio.select_tool(StructureTools.Tool.BRUSH_IN)
+	check(is_equal_approx(tools.radius, 1.5) and is_equal_approx(studio.hud.options._radius.value, 1.5),
+		"Switching back restores the last size, in the options too")
 	tools.apply(top + Vector3.DOWN * 2.0, Vector3.UP, Vector3.UP)
 	check(tools.editor.cell_count() > before, "Brush adds attracted cells")
 	# Pending edits commit by themselves once the stroke goes idle.

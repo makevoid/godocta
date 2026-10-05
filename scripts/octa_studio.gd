@@ -66,8 +66,11 @@ func _present(structure: OctaStructure, preset: int = -1) -> void:
 	camera.frame_structure(box)
 	environment.fit(box)
 
-## The window is 1900 × 1000 points: on a 2× (Retina/HiDPI) display that is 3800 × 2000
-## pixels, and the canvas_items stretch scales the UI (laid out at 1900 × 1000) to match.
+## Window sizes, screen sizes and usable rects are all in pixels, while the UI is laid
+## out in the 1900 × 1000 points of WINDOW_POINTS. `screen_get_scale()` reports the
+## pixels per point: 2 on a Retina/HiDPI screen, 1 on an ordinary one. The window asks
+## for 3800 × 2000 pixels on HiDPI and half that, 1900 × 1000, without it, so it covers
+## the same physical area either way and the canvas_items stretch scales the UI to match.
 ## It shrinks to fit smaller displays; an explicit --resolution (pixels) is left alone.
 const WINDOW_POINTS := Vector2(1900, 1000)
 const TITLE_BAR_POINTS := 32.0
@@ -80,6 +83,7 @@ func _fit_window_to_screen() -> void:
 	var usable := DisplayServer.screen_get_usable_rect(screen)
 	if usable.size.x <= 0 or usable.size.y <= 0:
 		return
+	# Pixels per layout point: 2 on HiDPI, 1 elsewhere, which halves the pixel count.
 	var scale := maxf(DisplayServer.screen_get_scale(screen), 1.0)
 	var target := WINDOW_POINTS * scale
 	var room := Vector2(usable.size) - Vector2(0.0, TITLE_BAR_POINTS * scale)
@@ -96,6 +100,8 @@ func select_tool(tool: StructureTools.Tool) -> void:
 	tools.set_tool(tool)
 	hud.tools.show_tool(tool)
 	hud.options.show_tool(tool)
+	# Each tool comes back with the size it was last used at.
+	hud.options.show_radius(tools.radius)
 
 ## Add or withdraw the scoop. Withdrawing it while it is in use falls back to orbit.
 func set_scoop_enabled(enabled: bool) -> void:

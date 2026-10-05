@@ -249,6 +249,11 @@ mouse ray into structure space (the node follows the renderer's position) and
 nearest lattice point is the containing cell. Missed rays fall to the ground plane
 under the original bottom layer.
 
+Each tool carries its own radius: `StructureTools.DEFAULT_RADII` starts brush in and
+the black hole at 3 cells and the scoop at 2, `set_radius()` writes the current tool's
+entry, and `set_tool()` restores it, so switching tools does not disturb the size the
+other one was used at.
+
 During a stroke `apply()` runs every 50 ms. Brush in fills up to ~1.5×radius free
 slots per tick, nearest first, that touch an occupied cell or lie on the ground
 layer. Its first hit freezes a view plane through that point, and later ticks take

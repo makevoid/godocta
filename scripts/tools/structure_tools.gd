@@ -31,8 +31,14 @@ const COMMIT_DELAY := 1.2
 const MAX_SWALLOWED := 2500 # Larger bites vanish without the flight.
 
 var tool: Tool = Tool.NAVIGATE
-## Brush radius in cell spans.
-var radius: float = 2.0
+## Starting radius per tool, in cell spans. Each tool then keeps the last size it was
+## given, so switching between them restores the size that suited each one.
+const DEFAULT_RADII: Dictionary = {
+	Tool.NAVIGATE: 3.0, Tool.BRUSH_IN: 3.0, Tool.BLACK_HOLE: 3.0, Tool.SCOOP: 2.0,
+}
+## Brush radius in cell spans, for the selected tool.
+var radius: float = float(DEFAULT_RADII[Tool.BRUSH_IN])
+var _radii: Dictionary = DEFAULT_RADII.duplicate()
 ## Palette index the brush paints, or -1 for auto: each new cell adopts its neighbors' color.
 var brush_color: int = -1
 ## Scoop tilt in degrees around the screen X and Y axes: -45, 0 or 45 each.
@@ -69,6 +75,7 @@ func _ready() -> void:
 
 func set_tool(value: Tool) -> void:
 	tool = value
+	radius = float(_radii[tool])
 	if tool == Tool.NAVIGATE:
 		_end_stroke()
 		gizmo.visible = false
@@ -76,6 +83,7 @@ func set_tool(value: Tool) -> void:
 
 func set_radius(cells: float) -> void:
 	radius = clampf(cells, MIN_RADIUS, MAX_RADIUS)
+	_radii[tool] = radius
 
 ## Pick the painted color: a palette index, or -1 to keep adopting neighbors' colors.
 ## Indices outside the displayed palette, and any color on an uncolored build, fall to auto.
