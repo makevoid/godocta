@@ -8,7 +8,8 @@ extends Node3D
 ##    at that depth. When nothing is left to fill, `brush_full` reports the stroke is
 ##    done: release and click again to lay the next layer.
 ##    Cells take the brush color, or their neighbors' color when it is auto (-1).
-##  · Black hole: a globe that swallows every cell within its radius.
+##  · Black hole: a globe that swallows every cell within its radius. Its depth stays
+##    fixed for the stroke, so clearing the foreground never retargets the background.
 ##  · Scoop: a half globe, flat or tilted 45° around the screen's X and Y axes, that
 ##    shaves cells off the surface. Its cut plane is fixed for a stroke, so holding or
 ##    dragging it planes the build instead of digging deeper.
@@ -220,6 +221,10 @@ func _update_brush(delta: float) -> void:
 	var mouse := viewport.get_mouse_position()
 	var origin := to_local(camera.project_ray_origin(mouse))
 	var direction := (global_basis.inverse() * camera.project_ray_normal(mouse)).normalized()
+	_update_brush_ray(origin, direction, delta)
+
+## Position and apply the brush along a mouse ray in structure space.
+func _update_brush_ray(origin: Vector3, direction: Vector3, delta: float) -> void:
 	var hit := editor.pick(origin, direction)
 	if hit.get("hit", false):
 		_fallback_color = maxi(editor.color_of(hit.cell), 0)
@@ -237,14 +242,18 @@ func _update_brush(delta: float) -> void:
 		else:
 			gizmo.visible = false
 			return
-	elif tool == Tool.BRUSH_IN:
-		# Freeze the brush's distance from the camera: the blob it fills cannot walk
-		# towards the viewer, and dragging slides the globe sideways at that depth.
+	elif tool == Tool.BRUSH_IN or tool == Tool.BLACK_HOLE:
+		# Both globes stay at the first hit's depth: adding cannot creep towards the
+		# viewer, and removing cannot jump to newly exposed cells in the background.
 		if _stroking and _stroke_plane == null and not hit.is_empty():
 			_stroke_plane = Plane(-direction, hit.point)
 		var at_depth: Variant = (_stroke_plane as Plane).intersects_ray(origin, direction) if _stroke_plane != null else null
 		if at_depth != null:
 			center = at_depth
+		elif _stroke_plane != null:
+			# If the camera turns away from the plane, wait until the ray meets it again.
+			gizmo.visible = false
+			return
 		elif not hit.is_empty():
 			center = hit.point
 		else:

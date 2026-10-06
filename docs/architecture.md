@@ -262,9 +262,13 @@ from the camera, so a stroke fills one blob and stops instead of walking towards
 viewer, while dragging paints sideways at that depth. A tick that fills nothing
 emits `brush_full` once (`OctaStudio` shows a toast) and greys the gizmo; moving the
 brush onto free slots clears it, and releasing drops the frozen plane so the next
-click picks a new depth. Black hole removes the ball; scoop removes the half ball
-above a plane about 0.75 span under the first hit, tilted in screen space, and later
-ticks slide along that plane. `StructureRenderer.set_editing(true)` finishes any
+click picks a new depth. Black hole removes the ball using the same frozen view
+plane: holding or dragging clears only that depth instead of jumping to the
+background after the foreground disappears. Release and click again to target
+deeper cells. If a ray no longer intersects the frozen view plane, both globe tools
+pause instead of falling back to a new hit. Scoop removes the half ball above a
+plane about 0.75 span under the first hit, tilted in screen space, and later ticks
+slide along that plane. `StructureRenderer.set_editing(true)` finishes any
 assembly and keeps the full buffer drawn; `hide_cell()` collapses removed originals.
 Added cells and the spiralling swallowed cells are drawn by two overlay
 `MultiMeshInstance3D`s that share the renderer's current material (rank 0, so they

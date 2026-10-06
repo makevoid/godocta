@@ -39,7 +39,7 @@ Tested with Godot **4.7.2**. No addons, external packages, or C# runtime are req
 | Save / Load | Write or open a compact `.octa` arrangement |
 | Orbit / **V** or **Esc** | Navigation only: left drag orbits |
 | Brush in / **B** | Paint cells in: new cells fly in and snap to the cells under the brush (or rest on the ground) and take the brush color. A stroke keeps the brush at the depth of its first hit, so it fills that globe and stops; drag to paint sideways, and when the globe is full the gizmo greys out and a toast asks for another click |
-| Black hole / **E** | A globe that swallows every cell within its radius |
+| Black hole / **E** | Swallow cells within a globe fixed at the first hit's depth for the stroke; hold or drag to clear that foreground area, then release and click again to target deeper cells |
 | Scoop / **S** | A half globe that shaves the surface about one layer deep; its cut plane is fixed per stroke so dragging planes the build. Enable it in Settings first |
 | **←/→**, **↑/↓** | Tilt the scoop 45° around the screen X / Y axes (flat by default) |
 | **[** / **]** or Brush size | Shrink / grow the brush (0.6–12 cells). Brush in and the black hole start at 3 cells, the scoop at 2, and each tool keeps the last size it was used at |

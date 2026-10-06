@@ -72,6 +72,7 @@ func _run() -> void:
 	studio.toggle_xray()
 	check(not studio.renderer.xray, "X-ray toggles off")
 	await _test_tools()
+	_test_black_hole_depth()
 	# Generated builds load from the gallery with their palette.
 	var gallery := studio.hud.toolbar.gallery_paths
 	check(gallery.size() >= 5, "Builds gallery lists generated structures")
@@ -166,6 +167,56 @@ func _test_tools() -> void:
 	check(tools.tool == StructureTools.Tool.NAVIGATE and not options.visible,
 		"Withdrawing the scoop falls back to orbit and hides the options")
 	studio.set_scoop_tilt(Vector2i.ZERO)
+
+## A held black hole stays local after its first bite, including while dragging.
+func _test_black_hole_depth() -> void:
+	var tools := studio.tools
+	var foreground := Vector3i(0, 4, 8)
+	var beside := Vector3i(8, 4, 8)
+	var background := Vector3i(0, 4, -8)
+	var behind_beside := Vector3i(8, 4, -8)
+	studio._present(OctaStructure.from_cells(PackedInt32Array([
+		0, 4, 8, 8, 4, 8, 0, 4, -8, 8, 4, -8,
+	]), "Depth test"))
+	studio.select_tool(StructureTools.Tool.BLACK_HOLE)
+	studio.set_brush_radius(1.5)
+	tools._ensure_editor()
+	var origin := Vector3(0, 2, 12)
+	var direction := Vector3.FORWARD
+	var press := InputEventMouseButton.new()
+	press.button_index = MOUSE_BUTTON_LEFT
+	press.pressed = true
+	var release := InputEventMouseButton.new()
+	release.button_index = MOUSE_BUTTON_LEFT
+	tools._unhandled_input(press)
+	tools._update_brush_ray(origin, direction, StructureTools.TICK)
+	var center := tools.gizmo.position
+	check(not tools.editor.contains(foreground) and tools.editor.contains(background),
+		"The black hole's first bite removes only the foreground")
+	for tick in 20:
+		tools._update_brush_ray(origin, direction, StructureTools.TICK)
+	check(tools.editor.contains(background) and tools.gizmo.position.is_equal_approx(center),
+		"Holding the black hole never retargets the exposed background")
+	tools._update_brush_ray(origin, Vector3(4, 0, -8).normalized(), StructureTools.TICK)
+	check(not tools.editor.contains(beside) and tools.editor.contains(behind_beside),
+		"Dragging the black hole removes nearby foreground cells at the original depth")
+	for tick in 20:
+		tools._update_brush_ray(origin + Vector3.RIGHT * 4, direction, StructureTools.TICK)
+	check(tools.editor.contains(behind_beside), "Dragging over a cleared area preserves the background")
+	tools._update_brush_ray(Vector3(-8, 2, -4), Vector3.RIGHT, StructureTools.TICK)
+	check(not tools.gizmo.visible and tools.editor.contains(background),
+		"A ray parallel to the stroke plane cannot fall back to background cells")
+	tools._unhandled_input(release)
+	tools.commit()
+	check(studio.renderer.structure.cell_count() == 2, "Committing the stroke preserves both background cells")
+	tools._unhandled_input(press)
+	tools._update_brush_ray(origin, direction, StructureTools.TICK)
+	check(not tools.editor.contains(background) and tools.editor.contains(behind_beside),
+		"A fresh click can deliberately target the background")
+	tools._unhandled_input(release)
+	studio.set_brush_radius(3.0)
+	studio.select_preset(StructurePresets.Shape.CUBE)
+	studio.select_tool(StructureTools.Tool.NAVIGATE)
 
 ## The brush colors: auto on uncolored builds, one palette color on colored ones.
 func _test_brush_colors() -> void:
