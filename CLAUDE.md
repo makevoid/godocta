@@ -49,6 +49,7 @@ godot --headless --path . --script tests/test_scene.gd
 # macOS: real GPU capture, hidden and without taking focus.
 tools/capture.sh --shapes=castle,cube --views=hero,front,side,top --modes=solid,xray --at=0.5
 tools/capture.sh --shapes=castle,arena --views= --bench
+tools/walkthrough.sh   # Scripted UI tour (~80 s), hidden: captures/walkthrough.mp4
 ```
 
 Go vet disables only the composite-literal check because the geometric DSL uses

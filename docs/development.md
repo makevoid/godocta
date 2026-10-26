@@ -129,6 +129,31 @@ showcase takes about an hour in under 1 GB without blocking the machine. Each sh
 encoded to `<output>.parts/` first: after an interruption, rerun the same command to
 resume from the last finished shot; the parts are joined and removed at the end.
 
+## UI walkthrough video
+
+`tools/walkthrough.sh` records a scripted tour of about 80 seconds of the real app to
+`captures/walkthrough.mp4` (1920×1080, 30 fps, H.264 through Homebrew `ffmpeg`): welcome
+screen, a primitive from the menu, Brush in with the radius slider, Black hole, Undo and
+Redo, orbit and zoom, Load through the file dialog, a large black hole biting into a
+castle tower, the build library search and a red Brush in dot on the Taj Mahal. Key
+clicks are checked against the UI and retried, with a warning in the log, if one is lost. Like the
+captures below, Godot runs hidden in the background and never takes focus; a run takes
+about a minute.
+
+```sh
+tools/walkthrough.sh
+tools/walkthrough.sh --out=captures/tour.mp4 --fast=1   # Loaded builds assemble in real time.
+```
+
+`tools/walkthrough.gd` hosts the studio in an offscreen `SubViewport` at 2× and pushes
+mouse and key events into it (a root window would read the real OS pointer), so menus,
+tooltips, brushes and dialogs react exactly as they do for a user. It composites a drawn
+pointer, click ripples and captions on top and streams frames to `ffmpeg`. With
+`--fixed-fps` each frame advances exactly 1/fps seconds regardless of render speed.
+`--fast` (default 2) speeds up the assembly of the loaded builds. The
+file dialog shows the absolute path of `structures/`. Edit the scene functions in the
+script to change the tour; controls are located from the live UI, not fixed coordinates.
+
 ## Screenshots and benchmarks
 
 On macOS, use the wrapper so rendering does not take focus:
