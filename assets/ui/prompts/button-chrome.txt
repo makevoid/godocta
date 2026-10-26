@@ -1,0 +1,11 @@
+PURPOSE: One single production UI button skin, a text-free nine-slice source texture for a premium futuristic architectural sandbox. Exactly 768x256 pixels. It must be useful as an actual button background, not a mockup or a sheet.
+SUBJECT: A single wide, clean dark marine-blue UI button with a restrained crisp neon-aqua perimeter line and subtly chamfered corners. Precision blueprint aesthetic, modern, inviting and sophisticated. Dark translucent-glass-like material but rendered fully opaque.
+LAYOUT: The button fills the entire canvas from edge to edge. The outer aqua hairline rectangular border runs 4 pixels inside all four image edges. Each corner has a tiny 20-pixel chamfer, not rounded. The central 85 percent of the width and central 65 percent of the height must be perfectly smooth, blank and quiet so native UI labels can be placed there. A tiny double aqua tick in the lower right corner within 28 pixels of the edges. No separate objects. No second inset rectangle. No large spaces outside the button.
+STYLE: Flat orthographic game UI chrome. Pixel-crisp edges, restrained delicate luminous edge, understated premium sci-fi drafting instrument. No chunky bevel or heavy ornament.
+MATERIALS: Smooth deep navy fill, a faint vertical navy gradient, matte glass surface, fine aqua edge highlight.
+PALETTE: Background/button fill #102D3E, edge #53F5DE at moderate brightness, corners outside the chamfer #07131F. No other colors.
+LIGHT: Even UI lighting. Any glow must stay within 5 pixels of the perimeter. The center remains dark and flat.
+CAMERA/FRAME: Straight-on 2D rectangle, exactly 3:1 aspect ratio, no perspective, no rotation, no cast shadows.
+TECHNICAL: Opaque PNG. This will be reduced to 192x64 and used with nine-slice margins of 8 pixels; the middle must stretch cleanly. All decoration must remain inside the outer 28 pixel band.
+TEXT: None. Absolutely no text, symbols, letters or numbers.
+EXCLUDE: No mockup, no device, no scene, no background outside the button, no extra buttons, no button grid, no label, no icon, no hexagon in the middle, no texture noise, no scanlines, no watermark, no extruded 3D border, no white interior, no drop shadow.

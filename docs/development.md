@@ -42,7 +42,7 @@ godot --headless --path . --script tests/test_scene.gd
 | Check | Coverage / expected result |
 | --- | --- |
 | [test_core.gd](../tests/test_core.gd) | Mesh topology/winding/volume, 14 shared faces, lattice/builder validation, deterministic presets and symmetry, timing, v1/v2 round trips and corrupt payloads, all five checked-in generated builds; prints `Core checks: N passed, 0 failed.` |
-| [test_scene.gd](../tests/test_scene.gd) | Instantiates the actual scene, selects presets via buttons, waits for assembly, checks buffers and surface reduction, rapid switching/replay, palette/X-ray, gallery/theme selection, camera and empty data; prints `Scene integration: PASS` |
+| [test_scene.gd](../tests/test_scene.gd) | Instantiates the actual scene, checks welcome/collection actions, search and overlay input isolation, selects presets via buttons, waits for assembly, checks buffers and surface reduction, rapid switching/replay, palette/X-ray, gallery/theme selection, camera and empty data; prints `Scene integration: PASS` |
 | [octa/structure_test.go](../gen/octa/structure_test.go) | Colored binary round trip, uncolored v1 output, invalid colors, truncated payload |
 | [scenes/scenes_test.go](../gen/scenes/scenes_test.go) | Compiles each registered scene at default density; validates count, bottom-up ordering and ≥3 colors |
 | `go vet -composites=false ./...` | Static checks, with positional geometric struct literals allowed |
@@ -122,6 +122,7 @@ tools/capture.sh --shapes=cube,castle --views=hero
 tools/capture.sh --shapes=castle --views=hero,front,side,top --modes=solid,xray
 tools/capture.sh --shapes=arena --at=0.25,0.5,0.75
 tools/capture.sh --shapes=castle,arena --views= --bench
+tools/capture.sh --ui --shapes=cube --views=hero --out=captures/aqua-ui
 ```
 
 `tools/capture.sh` changes to the repo root, launches a new Godot app instance with
@@ -138,6 +139,7 @@ different `.app` path if necessary. The wrapper itself requires macOS and zsh.
 | `--gap=0.045` | Renderer gap, default 0 (face-to-face); shader positions change, saved data does not |
 | `--out=captures` | PNG destination; relative paths resolve under `res://`, absolute paths also work |
 | `--bench` | Measure settled hero frames, waiting up to 20 seconds for surface extraction |
+| `--ui` | Also capture welcome, collection, brush options, help, settings and an edit/undo/redo sequence; repeat welcome, collection and expanded options at the 1100×720 minimum window size |
 
 Use `--name=value` syntax; the capture parser does not consume a separate value
 argument. Hero uses the application's default framing, including lower pitch for
@@ -156,6 +158,25 @@ forces 20 draws with texture readback, reporting mean milliseconds, approximate
 FPS, total cells, and drawn cells. Readback overhead is included; compare runs at
 the same resolution, mode, gap, and hardware. This is not a pure GPU timer.
 
+## UI artwork
+
+The checked-in splash and button frame were generated with the project-local
+[sunburst-images skill](../.agents/skills/sunburst-images/SKILL.md). Runtime use
+requires only Godot; Ruby, `excon`, and a fal.ai credential are needed only when
+regenerating artwork:
+
+```sh
+ruby tools/generate_ui_art.rb
+godot --headless --path . --editor --import --quit
+```
+
+This submits two image requests. Edit `assets/ui/prompts/*.txt` first; the exact
+prompt, settings and request ID are also retained in the generated JSON sidecars.
+On macOS the script uses `sips` to resize the button master to the 192×64 runtime
+skin; other platforms need that resize separately. Keep the ten-pixel nine-slice
+corners intact when changing `StudioTheme.chrome()`. Button labels and states are
+native Godot controls, and small SVG icons stay sharp at different display scales.
+
 ## Typical changes
 
 | Change | Files to consider | Verification |
@@ -166,7 +187,7 @@ the same resolution, mode, gap, and hardware. This is not a pure GPU timer.
 | Change timing | `AssemblyTimeline` and shared shader formulas/uniforms; renderer | Timing and scene tests, partial captures via `--at` |
 | Change environment | `WorldTheme`, `StudioEnvironment`, sky/ground shaders | Scene theme wiring, themed hero/side captures |
 | Change data or format | Both codecs/validators, `docs/octa-format.md`, relevant GDScript/Go tests | Both language suites and checked-in generated files |
-| Change brush tools | `OctaEditor`, `StructureTools`, `BrushGizmo`, `ToolPalette`, `ToolOptions`, `OctaPalette`, `brush`/`black_hole` shaders, `OctaStudio` keys | Core editor checks, scene `_test_tools()`, hidden GPU capture of the gizmo |
+| Change brush tools | `OctaEditor`, `StructureTools`, `BrushGizmo`, `ToolPalette`, `ToolOptions`, `OctaPalette`, `brush`/`black_hole` shaders, `OctaStudio` keys | Core editor checks, scene `_test_tools()` and `_test_undo_redo()` (including the 10-stroke limit), hidden GPU capture of the gizmo and history controls |
 | Change controls | `StudioHUD` (readout, assembly line, help card), `StructureToolbar` (bar and settings menu), `ToolOptions`, `StudioTheme`, `OrbitCamera`, `OctaStudio` signal wiring | Scene tests, native input/dialog inspection, README controls |
 
 For a new Go scene, follow the complete example in the [generator guide](../gen/README.md).

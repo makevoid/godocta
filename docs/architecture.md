@@ -73,32 +73,51 @@ the current build. Successful saves refresh the gallery.
 | [OrbitCamera](../scripts/rendering/orbit_camera.gd) | `Camera3D` | `frame_structure()`, `reset_view()`, orbit/pan/zoom input, auto-orbit, clipping planes |
 | [StudioEnvironment](../scripts/rendering/studio_environment.gd) | `Node3D` | Creates sky, ground and two lights; `apply_theme()` and bounds-dependent `fit()` |
 | [WorldTheme](../scripts/rendering/world_theme.gd) | `RefCounted` | `name_for()` title lookup, `themes()` dictionaries, studio and shared afternoon defaults |
-| [StructureTools](../scripts/tools/structure_tools.gd) | `Node3D` | Tool enum, stroke input, `apply()`, `commit()`, `reset()`, pending-cell and black-hole overlays |
+| [StructureTools](../scripts/tools/structure_tools.gd) | `Node3D` | Tool enum, stroke input, `apply()`, `commit()`, `reset()`, `undo()`, `redo()`, `can_undo()`, `can_redo()`, `history_changed`; pending-cell and black-hole overlays |
 | [BrushGizmo](../scripts/tools/brush_gizmo.gd) | `Node3D` | Globe/dome brush outline, scoop cut-plane ring, billboard black hole |
-| [ToolPalette](../scripts/ui/tool_palette.gd) | `HBoxContainer` | The tool strip inside the top bar; `show_tool()`, `set_scoop_available()` |
+| [ToolPalette](../scripts/ui/tool_palette.gd) | `VBoxContainer` | Floating left toolkit and Undo/Redo buttons; `show_tool()`, `show_history()`, `set_scoop_available()` |
 | [ToolOptions](../scripts/ui/tool_options.gd) | `PanelContainer` | Bottom-right options for the selected tool: brush size, color grid, scoop tilt; `show_tool()`, `show_radius()`, `show_palette()`, `show_color()`, `set_more_expanded()`, `show_tilt()` |
-| [StudioHUD](../scripts/ui/studio_hud.gd) | `CanvasLayer` | `show_structure()`, `show_progress()`, `set_xray()`, `notify()`, `toggle_help()`; readout, assembly line, help card and toasts |
-| [StructureToolbar](../scripts/ui/structure_toolbar.gd) | `PanelContainer` | Top bar: tool strip, Primitives and Builds menus, file actions, settings menu; `refresh_gallery()`, `select_shape()`, `set_setting_checked()`, `gallery_paths`, action signals |
-| [StudioTheme](../scripts/ui/studio_theme.gd) | `RefCounted` | Color constants and `create()`, `panel()`, `card()`, `primary()`, `label()`, `button()`, `menu()` factories |
+| [StudioHUD](../scripts/ui/studio_hud.gd) | `CanvasLayer` | `show_structure()`, `show_progress()`, `set_xray()`, `notify()`, `toggle_help()`, `set_welcome_visible()`, `set_library_visible()`, `has_overlay()`, `overlay_changed`; workspace, overlays and status line |
+| [StructureToolbar](../scripts/ui/structure_toolbar.gd) | `PanelContainer` | Top bar: home, Primitives and Builds menus, collection, file actions, settings; `refresh_gallery()`, `select_shape()`, `set_setting_checked()`, `gallery_paths`, action signals |
+| [StudioWelcome](../scripts/ui/studio_welcome.gd) | `Control` | Interactive splash, with native entry, collection and file-open actions |
+| [BuildLibrary](../scripts/ui/build_library.gd) | `Control` | Searchable three-column collection; `open(paths)`, `file_selected`, `close_requested` |
+| [StudioTheme](../scripts/ui/studio_theme.gd) | `RefCounted` | Color constants and `create()`, `panel()`, `card()`, `chrome()` nine-slice skin, `hero_button()`, `primary()`, `label()`, `button()`, `menu()` factories |
 | [UnitGlyph](../scripts/ui/unit_glyph.gd) | `Control` | Draws the unit's 36 edges from the same geometric vertices as the mesh, in the help card |
 
 The toolbar emits `shape_selected`, `file_selected`, `replay_requested`,
-`save_requested`, `load_requested`, `reset_view_requested`, `help_requested`, and the
+`save_requested`, `load_requested`, `reset_view_requested`, `help_requested`,
+`home_requested`, `library_requested`, and the
 settings menu's `orbit_changed`, `xray_changed` and `scoop_enabled_changed`. The tool
-strip emits `tool_selected`; the options panel emits `radius_changed`,
+strip emits `tool_selected`, `undo_requested` and `redo_requested`; the options panel emits `radius_changed`,
 `color_selected` and `tilt_changed`. `OctaStudio` routes them to the
 appropriate object. Renderer `assembly_progress(fraction, duration)` updates the
 HUD; `assembly_finished` signals natural completion and is used by integration
 tests. A direct `seek(1)` updates progress but does not emit `assembly_finished`.
 
-The chrome is one 50-point top bar plus panels that appear only when they apply. The
-bar holds the wordmark, the tool strip, the Primitives and Builds menus, the title and
-counters, the file actions, the help button and the settings menu; a hairline progress
+The chrome uses a 76-point top bar, a floating toolkit on the left, and a bottom status
+bar. The top bar holds home, Primitives and Builds menus, the searchable collection,
+title and counters, file actions, help and settings; a hairline progress
 bar and its clock sit under it while cells fly in and disappear on completion. X-ray,
 auto orbit and the scoop live in the settings menu, which keeps rarely flipped switches
 off the bar — the scoop is off until enabled, and withdrawing it falls back to orbit.
 `ToolOptions` shows the options of the selected tool in the bottom right corner and
 stays hidden while orbiting. The help card lists every control and the unit diagram.
+
+`StudioWelcome` covers the workspace on launch. Enter replays the current arrangement;
+Home preserves it. `BuildLibrary` searches the toolbar's alphabetically ordered paths
+without changing shortcut assignments. Welcome, collection and help overlays signal
+`overlay_changed`; `OctaStudio` finishes pending strokes, commits edits, and suspends
+tool processing and camera input until the overlay closes. World shortcuts are
+suppressed while an overlay is open. Workspace buttons do not retain keyboard focus,
+preserving Space-to-replay and arrow-key scoop tilt after a click. Welcome and
+collection buttons support Tab navigation.
+
+`assets/ui/splash.png` is Sunburst concept artwork used during boot and behind the
+welcome screen. The native geometry and help diagram remain the authoritative cell
+shape. `button-chrome-runtime.png` is a 192×64 derivative of the generated master,
+used as a ten-pixel nine-slice for large entry buttons, compact primary actions, and
+selected tools. Labels stay native; small icons extend the existing SVG system.
+Generation prompts and JSON request sidecars are kept beside the artwork.
 
 The gallery lists all `.octa` filenames in `res://structures`, sorted by filename.
 Its labels are capitalized stems, while the HUD title and world selection come from
@@ -285,11 +304,24 @@ and the Go color names, while the swatches of a colored build come from its own
 embedded palette, so the grid shows what will actually be stored. Eight swatches are
 visible and More reveals all 16; picking one of the last eight unfolds them.
 
-After `COMMIT_DELAY` idle seconds, or before Save/Replay, `commit()` calls
+After `COMMIT_DELAY` idle seconds, or before another stroke, switching tools or
+Save/Replay, `commit()` calls
 `display(data, false, recenter = false)`, which keeps the node position and the
 height-shading reference box, then rebuilds the editor. A new surface task starts as
 usual. Edits to large builds pay one GDScript rebuild per commit (≈0.1–0.3 s for
 150,000 cells); structures replaced from outside the tools drop pending effects.
+
+History retains at most ten immutable `OctaStructure` snapshots shared between
+undo and redo stacks, without renderer buffers. Each click/drag is one action even
+when two strokes happen before the idle commit. Undo commits pending edits first,
+then restores the previous snapshot; redo restores the saved result without rerunning
+random brush placement. Restoring clears both effect meshes immediately and preserves
+the renderer origin, height reference, camera and editor ground layer. Coordinates,
+assembly order, colors, palette, span and title are retained; an empty colored build
+keeps its palette for subsequent painting. A changed stroke clears redo; no-op strokes
+do not create history. `reset()` clears both stacks when another build is presented.
+`history_changed` updates the toolkit buttons; Cmd/Ctrl+Z undoes, Cmd/Ctrl+Shift+Z or
+Ctrl+Y redoes. Overlays and file dialogs suppress these shortcuts.
 
 The generator's types, component catalog, sampling rules, and extension workflow
 are documented in the [generator guide](../gen/README.md).

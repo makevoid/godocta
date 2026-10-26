@@ -1,0 +1,38 @@
+{
+  "name": "splash",
+  "request_id": "01a10ef4-786b-7313-a930-8ea8c8e2dd69",
+  "elapsed_seconds": 43.11,
+  "prompt": {
+    "purpose": "A premium landscape main-menu background for OCTA, a playful but sophisticated 3D building sandbox. Artwork only; real interactive typography is added separately in the game.",
+    "subject": "An extraordinary floating architectural playground assembled from small regular truncated octahedrons, space-filling 14-face polyhedra with eight hexagons and six squares. A compact miniature futuristic citadel, terraced towers, a sweeping bridge, little gardens and floating assembly pieces. A few large individual truncated-octahedron cells orbit the miniature world, clearly showing their hexagonal and square faces. A luminous cyan blueprint projection beneath the island suggests the joy of designing a world from a single geometric cell.",
+    "layout": "Wide 16:9 composition. Reserve the entire left 45 percent for a quiet nearly solid midnight navy field (#07131F), absolutely empty enough to place a large heading and menu over it. The beautiful sculptural world occupies the right 55 percent, centered near x=1450 y=590 on a 2048x1152 canvas. Keep a 9 percent safe margin around the artwork. Fine blueprint drafting guides and sparse orbital curves support the right-side composition. Fade all detail out before the left 40 percent. Intentional editorial negative space.",
+    "style": "High-end art direction for a modern creative sandbox, elegant stylized 3D miniature meets precise architectural blueprint. Joyful, curious and tactile, with exceptional composition and restrained detail. Geometric precision, clean silhouettes, soft bevels. Not a gritty military game. Not generic cyberpunk.",
+    "materials": "Matte porcelain and deep marine-blue blocks, translucent aqua glass on a few faces, brushed pale titanium bridges, a few apricot-orange small blocks, tiny mint-green gardens. Thin luminous edges on selected cells.",
+    "palette": "Midnight ink #07131F and navy #0D2134 dominate. Crisp neon aqua #53F5DE, cool mist-white #E8F6FF, soft periwinkle #A6ABF7 and tiny warm apricot #FFBC86 accents. Aqua is the hero. Keep the left side dark.",
+    "text": "None. No text anywhere.",
+    "light": "Soft studio illumination, aqua rim lighting, restrained local glow confined to the sculpture, beautiful ambient occlusion, no bloom over the empty left side.",
+    "camera": "Isometric three-quarter architectural view of the floating miniature, orthographic feel, full island visible with space around it. Landscape 2048x1152.",
+    "technical": "Edge-to-edge full bleed background. Crisp geometry, smooth dark gradients without noise, high-quality game key art.",
+    "exclude": "No words, no letters, no numbers, no logos, no watermark, no interface boxes, no buttons, no people, no characters, no weapons, no stars, no busy left half, no conventional cubic Minecraft terrain, no blinding bloom."
+  },
+  "prompt_text": "PURPOSE: A premium landscape main-menu background for OCTA, a playful but sophisticated 3D building sandbox. Artwork only; real interactive typography is added separately in the game.\nSUBJECT: An extraordinary floating architectural playground assembled from small regular truncated octahedrons, space-filling 14-face polyhedra with eight hexagons and six squares. A compact miniature futuristic citadel, terraced towers, a sweeping bridge, little gardens and floating assembly pieces. A few large individual truncated-octahedron cells orbit the miniature world, clearly showing their hexagonal and square faces. A luminous cyan blueprint projection beneath the island suggests the joy of designing a world from a single geometric cell.\nLAYOUT: Wide 16:9 composition. Reserve the entire left 45 percent for a quiet nearly solid midnight navy field (#07131F), absolutely empty enough to place a large heading and menu over it. The beautiful sculptural world occupies the right 55 percent, centered near x=1450 y=590 on a 2048x1152 canvas. Keep a 9 percent safe margin around the artwork. Fine blueprint drafting guides and sparse orbital curves support the right-side composition. Fade all detail out before the left 40 percent. Intentional editorial negative space.\nSTYLE: High-end art direction for a modern creative sandbox, elegant stylized 3D miniature meets precise architectural blueprint. Joyful, curious and tactile, with exceptional composition and restrained detail. Geometric precision, clean silhouettes, soft bevels. Not a gritty military game. Not generic cyberpunk.\nMATERIALS: Matte porcelain and deep marine-blue blocks, translucent aqua glass on a few faces, brushed pale titanium bridges, a few apricot-orange small blocks, tiny mint-green gardens. Thin luminous edges on selected cells.\nPALETTE: Midnight ink #07131F and navy #0D2134 dominate. Crisp neon aqua #53F5DE, cool mist-white #E8F6FF, soft periwinkle #A6ABF7 and tiny warm apricot #FFBC86 accents. Aqua is the hero. Keep the left side dark.\nTEXT: None. No text anywhere.\nLIGHT: Soft studio illumination, aqua rim lighting, restrained local glow confined to the sculpture, beautiful ambient occlusion, no bloom over the empty left side.\nCAMERA/FRAME: Isometric three-quarter architectural view of the floating miniature, orthographic feel, full island visible with space around it. Landscape 2048x1152.\nTECHNICAL: Edge-to-edge full bleed background. Crisp geometry, smooth dark gradients without noise, high-quality game key art.\nEXCLUDE: No words, no letters, no numbers, no logos, no watermark, no interface boxes, no buttons, no people, no characters, no weapons, no stars, no busy left half, no conventional cubic Minecraft terrain, no blinding bloom.",
+  "input": {
+    "image_size": {
+      "width": 2048,
+      "height": 1152
+    },
+    "quality": "xhigh",
+    "background": "opaque",
+    "output_format": "png",
+    "num_images": 1,
+    "sync_mode": false
+  },
+  "images": [
+    {
+      "url": "https://v3b.fal.media/files/b/0aad3bea/MXyvqN0Mxl2Bu1vqQEUF0_JNrIQtse.png",
+      "content_type": "image/png",
+      "file_name": "MXyvqN0Mxl2Bu1vqQEUF0_JNrIQtse.png",
+      "path": "/Users/makevoid/apps/godocta/assets/ui/splash.png"
+    }
+  ]
+}

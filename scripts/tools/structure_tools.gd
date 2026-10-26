@@ -18,6 +18,7 @@ extends Node3D
 ## has been idle for COMMIT_DELAY, then one rebuilt structure replaces the old one.
 
 signal committed(structure: OctaStructure)
+signal history_changed(undo_available: bool, redo_available: bool)
 ## The brush in stroke has nothing left to fill at its current position.
 signal brush_full
 
@@ -30,6 +31,7 @@ const ARRIVAL_TIME := 0.42
 const SWALLOW_TIME := 0.55
 const COMMIT_DELAY := 1.2
 const MAX_SWALLOWED := 2500 # Larger bites vanish without the flight.
+const HISTORY_LIMIT := 10
 
 var tool: Tool = Tool.NAVIGATE
 ## Starting radius per tool, in cell spans. Each tool then keeps the last size it was
@@ -62,6 +64,9 @@ var _commit_timer: float = 0.0
 var _clock: float = 0.0
 var _fallback_color: int = 0
 var _random := RandomNumberGenerator.new()
+# Displayed structures are immutable snapshots; history needs no mesh/buffer copies.
+var _undo: Array[OctaStructure] = []
+var _redo: Array[OctaStructure] = []
 
 func _ready() -> void:
 	for layer: MultiMeshInstance3D in [_pending, _vortex]:
@@ -75,6 +80,8 @@ func _ready() -> void:
 	_random.seed = 7
 
 func set_tool(value: Tool) -> void:
+	if value != tool:
+		commit()
 	tool = value
 	radius = float(_radii[tool])
 	if tool == Tool.NAVIGATE:
@@ -97,27 +104,34 @@ func set_brush_color(index: int) -> void:
 func world_radius() -> float:
 	return radius * (editor.span() if editor != null else renderer.structure.cell_span)
 
-## Discard pending edits, e.g. when another structure is presented.
+## Discard pending edits and history when another structure is presented.
 func reset() -> void:
-	_stroking = false
-	_stroke_plane = null
-	_saturated = false
+	_end_stroke()
 	_commit_timer = 0.0
-	_arrivals.clear()
-	_swallowed.clear()
-	_pending_dirty = true
+	_clear_effects()
+	_undo.clear()
+	_redo.clear()
 	editor = null
 	renderer.set_editing(false)
+	_emit_history()
 
 ## Rebuild the structure from pending edits now: before saving or replaying.
 func commit() -> void:
+	_end_stroke()
 	_commit_timer = 0.0
-	if editor == null or not editor.has_changes() or editor.structure != renderer.structure:
+	if editor == null or editor.structure != renderer.structure:
+		return
+	if not editor.has_changes():
+		renderer.set_editing(false)
 		return
 	var data := editor.build()
 	if data == null:
 		return
 	var layer := editor.ground_layer
+	_undo.append(editor.structure)
+	if _undo.size() > HISTORY_LIMIT:
+		_undo.pop_front()
+	_redo.clear()
 	renderer.display(data, false, false)
 	renderer.set_editing(false)
 	editor = OctaEditor.new(data, layer)
@@ -125,6 +139,53 @@ func commit() -> void:
 	_pending_dirty = true
 	_rebuild_pending()
 	committed.emit(data)
+	_emit_history()
+
+func can_undo() -> bool:
+	return not _undo.is_empty() or (editor != null and editor.has_changes())
+
+func can_redo() -> bool:
+	return not _redo.is_empty() and not (editor != null and editor.has_changes())
+
+## Finish a pending stroke first, so even edits still flying in can be redone exactly.
+func undo() -> bool:
+	if not _ensure_editor():
+		return false
+	commit()
+	if _undo.is_empty():
+		return false
+	_redo.append(renderer.structure)
+	_restore(_undo.pop_back())
+	return true
+
+func redo() -> bool:
+	if not _ensure_editor() or not can_redo():
+		return false
+	_undo.append(renderer.structure)
+	_restore(_redo.pop_back())
+	return true
+
+func _restore(data: OctaStructure) -> void:
+	_end_stroke()
+	_commit_timer = 0.0
+	_clear_effects()
+	var layer := editor.ground_layer
+	renderer.display(data, false, false)
+	renderer.set_editing(false)
+	editor = OctaEditor.new(data, layer)
+	committed.emit(data)
+	_emit_history()
+
+func _clear_effects() -> void:
+	_arrivals.clear()
+	_swallowed.clear()
+	_pending_dirty = false
+	for effect: MultiMeshInstance3D in [_pending, _vortex]:
+		if effect.multimesh != null:
+			effect.multimesh.instance_count = 0
+
+func _emit_history() -> void:
+	history_changed.emit(can_undo(), can_redo())
 
 ## Apply the current tool once at a structure-space point; axis orients the scoop.
 ## Mouse strokes call this every TICK; tests can call it directly.
@@ -132,13 +193,17 @@ func apply(center: Vector3, axis: Vector3 = Vector3.UP, toward: Vector3 = Vector
 	if not _ensure_editor():
 		return
 	renderer.set_editing(true)
+	var changed := false
 	match tool:
 		Tool.BRUSH_IN:
-			_brush_in(center, toward)
+			changed = _brush_in(center, toward)
 		Tool.BLACK_HOLE:
-			_swallow(editor.cells_within(center, world_radius()), center)
+			changed = _swallow(editor.cells_within(center, world_radius()), center)
 		Tool.SCOOP:
-			_swallow(editor.cells_within(center, world_radius(), axis), center)
+			changed = _swallow(editor.cells_within(center, world_radius(), axis), center)
+	if changed:
+		_redo.clear()
+		_emit_history()
 	_commit_timer = COMMIT_DELAY
 
 ## The scoop's dome direction: up, tipped by the tilt around the camera's screen axes.
@@ -163,6 +228,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed and not event.shift_pressed and not event.alt_pressed:
+			# Two clicks are two actions, even before the previous stroke's idle commit.
+			commit()
 			_stroking = true
 			_stroke_plane = null
 			_saturated = false
@@ -271,7 +338,7 @@ func _update_brush_ray(origin: Vector3, direction: Vector3, delta: float) -> voi
 			_tick = TICK
 			apply(center, axis, -direction)
 
-func _brush_in(center: Vector3, toward: Vector3) -> void:
+func _brush_in(center: Vector3, toward: Vector3) -> bool:
 	var span := editor.span()
 	var count := maxi(1, roundi(radius * 1.5))
 	var filled := 0
@@ -292,14 +359,17 @@ func _brush_in(center: Vector3, toward: Vector3) -> void:
 	elif not _saturated:
 		_saturated = true
 		brush_full.emit()
+	return filled > 0
 
-func _swallow(cells: Array[Vector3i], center: Vector3) -> void:
+func _swallow(cells: Array[Vector3i], center: Vector3) -> bool:
 	var span := editor.span()
+	var changed := false
 	for cell in cells:
 		var index := editor.original_index(cell)
 		var color := editor.color_of(cell)
 		if not editor.remove(cell):
 			continue
+		changed = true
 		if index >= 0:
 			renderer.hide_cell(index)
 		elif _arrivals.erase(cell):
@@ -308,6 +378,7 @@ func _swallow(cells: Array[Vector3i], center: Vector3) -> void:
 			var start := OctaLattice.to_world(cell, span)
 			_swallowed.append({"from": start, "to": center, "born": _clock,
 				"custom": _custom(start, color), "spin": _random.randf_range(0.6, 1.4)})
+	return changed
 
 func _custom(center: Vector3, color: int) -> PackedFloat32Array:
 	# Rank 0 is always settled; seed only shapes the assembly flight.

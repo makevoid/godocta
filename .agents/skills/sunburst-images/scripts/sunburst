@@ -1,0 +1,169 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Standalone CLI for OpenAI GPT Image 2.5 "Sunburst" on fal.ai.
+#
+# Deliberately dependency-light: it loads the vendored library beside it and
+# never touches the host project's Gemfile, so it behaves the same whichever
+# repo it is invoked from.
+
+require "optparse"
+
+lib = File.expand_path("lib", __dir__)
+$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
+
+begin
+  require "excon"
+rescue LoadError
+  abort "sunburst: the excon gem is required.\n  gem install excon"
+end
+
+require "logger"
+require "sunburst"
+
+COMMANDS = %w[generate prompt list show doctor status].freeze
+
+options = {}
+parser = OptionParser.new do |o|
+  o.banner = <<~USAGE
+    Usage:
+      sunburst list                      # the prompt library
+      sunburst show KEY                  # one prompt, rendered, with its notes
+      sunburst generate KEY [KEY...]     # render library prompts
+      sunburst prompt --file PROMPT.md   # render your own prompt (or pipe on stdin)
+      sunburst doctor                    # check credentials, spends nothing
+      sunburst status REQUEST_ID         # re-check a request you stopped waiting on
+
+    Options:
+  USAGE
+
+  o.on("--out DIR", "Output directory (default: ./sunburst-out)") { |v| options[:out] = v }
+  o.on("--name NAME", "Base filename (ad-hoc prompts; default: sunburst)") { |v| options[:name] = v }
+  o.on("--file PATH", "Read the prompt from a file instead of stdin") { |v| options[:file] = v }
+  o.on("--quality Q", "auto|low|medium|high|xhigh|max") { |v| options[:quality] = v }
+  o.on("--size SIZE", "A preset name, or WIDTHxHEIGHT (edges /16, <=3840, <=3:1)") { |v| options[:size] = v }
+  o.on("--format FMT", "png|jpeg|webp") { |v| options[:output_format] = v }
+  o.on("--background BG", "auto|transparent|opaque") { |v| options[:background] = v }
+  o.on("-n", "--num N", Integer, "Images per prompt") { |v| options[:num_images] = v }
+  o.on("--tag TAG", "With `generate`: every entry carrying this tag") { |v| (options[:tags] ||= []) << v }
+  o.on("--quiet", "Only print the resulting paths") { options[:quiet] = true }
+  o.on("-h", "--help") { puts o; exit }
+end
+parser.parse!
+
+command = ARGV.shift
+unless COMMANDS.include?(command)
+  warn command ? "sunburst: unknown command #{command.inspect}" : "sunburst: no command given"
+  warn parser.to_s
+  exit 1
+end
+
+def parse_size(value)
+  return nil if value.nil?
+  return value unless value.include?("x")
+
+  w, h = value.split("x", 2).map { |n| Integer(n) }
+  { width: w, height: h }
+end
+
+# Only the flags the user actually passed; everything else keeps the entry's
+# tuned value, which is the whole point of the library.
+def overrides(options)
+  {
+    quality: options[:quality],
+    image_size: parse_size(options[:size]),
+    output_format: options[:output_format],
+    background: options[:background],
+    num_images: options[:num_images]
+  }.compact
+end
+
+def configure!(options)
+  Sunburst.configure do |c|
+    c.output_dir = options[:out] || File.join(Dir.pwd, "sunburst-out")
+    unless options[:quiet]
+      c.logger = Logger.new($stdout, level: Logger::INFO,
+                                     formatter: ->(_s, _t, _p, m) { "#{m}\n" })
+    end
+  end
+end
+
+def render(entries, options)
+  configure!(options)
+  specs = entries.map { |e| e.to_spec(**overrides(options)) }
+  results = Sunburst.generator.generate_batch(specs)
+
+  failures = 0
+  results.each do |name, result|
+    if result.is_a?(StandardError)
+      failures += 1
+      warn "#{name}: FAILED -- #{result.message}"
+    else
+      result.images.each { |image| puts image.path }
+    end
+  end
+  exit 1 if failures.positive?
+end
+
+begin
+case command
+when "list"
+  Sunburst::PromptLibrary.entries.each_value do |entry|
+    settings = entry.settings.map do |k, v|
+      "#{k}=#{v.is_a?(Hash) ? "#{v[:width]}x#{v[:height]}" : v}"
+    end
+    puts format("%-22s %s", entry.key, entry.title)
+    puts format("%-22s   [%s] %s", "", entry.tags.join(" "), settings.join(" "))
+  end
+
+when "show"
+  key = ARGV.shift or abort "sunburst show: give a prompt key (see `sunburst list`)"
+  entry = Sunburst::PromptLibrary.entry(key)
+  puts "== #{entry.key}: #{entry.title}"
+  puts "-- settings: #{entry.settings.inspect}"
+  puts "-- key colour: #{entry.key_color}" if entry.key_color
+  puts "-- notes:"
+  puts entry.notes.lines.map { |l| "   #{l}" }.join
+  puts "-- prompt:"
+  puts entry.prompt.to_s
+
+when "doctor"
+  config = Sunburst.config
+  puts "endpoint:   #{config.endpoint_url}"
+  puts "output dir: #{options[:out] || File.join(Dir.pwd, "sunburst-out")}"
+  puts "prompts:    #{Sunburst::PromptLibrary.keys.size} in library"
+  puts "credential: #{config.api_key? ? "found" : "MISSING"}"
+  abort "no fal credential; set FAL_KEY or write the key to ~/.fal_ai_api_key" unless config.api_key?
+  puts "ok"
+
+when "status"
+  id = ARGV.shift or abort "sunburst status: give a REQUEST_ID"
+  require "json"
+  puts JSON.pretty_generate(Sunburst::QueueClient.new.status(id))
+
+when "generate"
+  entries = ARGV.map { |key| Sunburst::PromptLibrary.entry(key) }
+  Array(options[:tags]).each { |tag| entries.concat(Sunburst::PromptLibrary.tagged(tag)) }
+  entries = entries.uniq(&:key)
+  abort "sunburst generate: name at least one prompt key or --tag (see `sunburst list`)" if entries.empty?
+  render(entries, options)
+
+when "prompt"
+  text = options[:file] ? File.read(options[:file]) : $stdin.read
+  abort "sunburst prompt: the prompt is empty" if text.strip.empty?
+
+  configure!(options)
+  name = options[:name] || "sunburst"
+  result = Sunburst.generate(
+    prompt: text, name: name, **overrides(options)
+  )
+  result.images.each { |image| puts image.path }
+end
+rescue Sunburst::Error => e
+  # These carry actionable messages (which enum, which key, which request id);
+  # a Ruby backtrace on top of that just buries the useful part.
+  abort "sunburst: #{e.message}"
+rescue Interrupt
+  abort "\nsunburst: interrupted. Queued requests keep running -- " \
+        "re-check one with `sunburst status REQUEST_ID`."
+end

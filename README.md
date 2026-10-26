@@ -4,7 +4,9 @@ A class-based Godot 4 project for assembling structures from regular truncated o
 
 ## Run
 
-Open `project.godot` in Godot 4.4 or newer and press **F5**, or double-click **Launch Octa.command** on macOS. The window is **1900 × 1000 points**, rendered at the display's scale (3800 × 2000 pixels on a 2× Retina/HiDPI screen, with the UI scaled to match), and shrinks to fit smaller displays. The top bar shows live FPS and frame time next to the cell count.
+Open `project.godot` in Godot 4.4 or newer and press **F5**, or double-click **Launch Octa.command** on macOS. The window is **1900 × 1000 points**, rendered at the display's scale (3800 × 2000 pixels on a 2× Retina/HiDPI screen, with the UI scaled to match), and shrinks to fit smaller displays. The welcome screen offers **Enter the studio**, **Explore builds**, and **Open .octa**. Press **Enter** to start; click **OCTA** in the toolbar to return without losing your arrangement.
+
+The interface pairs Sunburst artwork with a navy-and-aqua blueprint theme. **Explore builds** searches the entire collection. A floating toolkit sits on the left, selected-tool options appear at bottom right, and the bottom status bar shows navigation hints, FPS, and frame time.
 
 ```sh
 bin/run                          # or: godot --path .
@@ -17,7 +19,7 @@ Tested with Godot **4.7.2**. No addons, external packages, or C# runtime are req
 
 | Guide | Contents |
 | --- | --- |
-| [Architecture and classes](docs/architecture.md) | Repository map, all 20 GDScript classes, data flow, rendering, workers, shaders and worlds |
+| [Architecture and classes](docs/architecture.md) | Repository map, all 24 GDScript classes, data flow, rendering, workers, shaders and worlds |
 | [Development workflow](docs/development.md) | Setup, tests, capture/benchmark options, export and extension recipes |
 | [Go generator](gen/README.md) | CLI, density, geometry/grid APIs, component catalog and adding scenes |
 | [OCTA format](docs/octa-format.md) | Binary layouts, validation and cross-language compatibility |
@@ -27,19 +29,23 @@ Tested with Godot **4.7.2**. No addons, external packages, or C# runtime are req
 
 | Control | Action |
 | --- | --- |
+| Enter (welcome screen) / OCTA (toolbar) | Enter the studio / return to the welcome screen, keeping the current arrangement |
+| Explore builds | Search by name; select a card to load it; **Esc** closes the collection |
 | Builds ▾, or **5–9** | Open a `.octa` file from `structures/`; shortcuts select the first five alphabetically |
 | Primitives ▾, or **1–4** | Assemble the cube, sphere, square pyramid or cylinder |
 | Replay, **R**, or **Space** | Restart the current arrangement |
 | Drag | Orbit |
 | Wheel / pinch | Zoom |
 | Shift + drag / middle drag | Pan |
-| Reset / **F** | Restore framing |
+| Frame / **F** | Restore framing |
 | **?** / **H** | The help card: every control plus the unit diagram |
 | Settings ▾ | X-ray view (**X**), auto orbit, and enabling the scoop tool |
 | Save / Load | Write or open a compact `.octa` arrangement |
 | Orbit / **V** or **Esc** | Navigation only: left drag orbits |
 | Brush in / **B** | Paint cells in: new cells fly in and snap to the cells under the brush (or rest on the ground) and take the brush color. A stroke keeps the brush at the depth of its first hit, so it fills that globe and stops; drag to paint sideways, and when the globe is full the gizmo greys out and a toast asks for another click |
 | Black hole / **E** | Swallow cells within a globe fixed at the first hit's depth for the stroke; hold or drag to clear that foreground area, then release and click again to target deeper cells |
+| Undo / **Cmd/Ctrl+Z** | Undo the last brush, black-hole or scoop stroke; keeps up to **10 strokes**, including the latest pending edit |
+| Redo / **Cmd/Ctrl+Shift+Z** or **Ctrl+Y** | Restore an undone stroke. A new edit clears redo; switching builds clears all history |
 | Scoop / **S** | A half globe that shaves the surface about one layer deep; its cut plane is fixed per stroke so dragging planes the build. Enable it in Settings first |
 | **←/→**, **↑/↓** | Tilt the scoop 45° around the screen X / Y axes (flat by default) |
 | **[** / **]** or Brush size | Shrink / grow the brush (0.6–12 cells). Brush in and the black hole start at 3 cells, the scoop at 2, and each tool keeps the last size it was used at |
@@ -232,7 +238,7 @@ A background task starts when a structure is displayed and finds cells whose 14 
 
 The solid and X-ray materials share `shaders/cell_common.gdshaderinc`. The X-ray material is additive and unshaded with no depth writes, so interiors show through; lines and vertex dots fade with screen-space density so distant views don't saturate.
 
-Brush edits are pending while you paint: swallowed cells are hidden in the full buffer and new cells are drawn by an overlay. About a second after a stroke (or before Save/Replay), `OctaEditor.build()` compacts them into a new structure that replaces the old one in place, without recentering or replaying. Survivors keep their assembly order and added cells follow. Switching builds discards pending edits.
+Brush edits are pending while you paint: swallowed cells are hidden in the full buffer and new cells are drawn by an overlay. About a second after a stroke (or before another stroke, switching tools, Save or Replay), `OctaEditor.build()` compacts them into a new structure that replaces the old one in place, without recentering or replaying. Survivors keep their assembly order and added cells follow. Undo/Redo keeps the last 10 strokes and restores exact coordinates, order and colors without moving the view. Switching builds discards pending edits and history.
 
 Geometry, storage, rendering, presets, UI, and camera are separate `class_name` classes under `scripts/`. The entry scene is `scenes/main.tscn`; `OctaStudio` connects their signals. Cell separation and display recentering do not change the saved coordinates.
 

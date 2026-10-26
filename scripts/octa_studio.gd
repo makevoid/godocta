@@ -32,11 +32,21 @@ func _ready() -> void:
 	hud.toolbar.load_requested.connect(_choose_load)
 	hud.toolbar.reset_view_requested.connect(camera.reset_view)
 	hud.toolbar.help_requested.connect(hud.toggle_help)
+	hud.toolbar.home_requested.connect(func() -> void: hud.set_welcome_visible(true))
+	hud.toolbar.library_requested.connect(func() -> void: hud.set_library_visible(true))
+	hud.welcome.enter_requested.connect(enter_studio)
+	hud.welcome.library_requested.connect(func() -> void: hud.set_library_visible(true))
+	hud.welcome.load_requested.connect(_choose_load)
+	hud.library.file_selected.connect(_load_structure)
+	hud.overlay_changed.connect(_update_overlay_input)
 	hud.toolbar.orbit_changed.connect(func(enabled: bool) -> void: camera.auto_orbit = enabled)
 	hud.toolbar.xray_changed.connect(renderer.set_xray)
 	hud.toolbar.scoop_enabled_changed.connect(set_scoop_enabled)
 	renderer.assembly_progress.connect(hud.show_progress)
 	hud.tools.tool_selected.connect(select_tool)
+	hud.tools.undo_requested.connect(undo)
+	hud.tools.redo_requested.connect(redo)
+	tools.history_changed.connect(hud.tools.show_history)
 	hud.options.radius_changed.connect(set_brush_radius)
 	hud.options.tilt_changed.connect(set_scoop_tilt)
 	hud.options.color_selected.connect(set_brush_color)
@@ -48,10 +58,33 @@ func _ready() -> void:
 	_load_dialog.file_selected.connect(_load_structure)
 	_fit_window_to_screen()
 	select_preset(StructurePresets.Shape.CUBE)
+	hud.set_welcome_visible(true)
+
+## Enter resumes the current arrangement, including edits made before visiting Home.
+func enter_studio() -> void:
+	hud.set_welcome_visible(false)
+	replay()
+
+## Full-screen menus own input. A brush cannot keep editing behind an overlay.
+func _update_overlay_input() -> void:
+	var blocked := hud.has_overlay()
+	if blocked:
+		tools._end_stroke()
+		tools.commit()
+		tools.gizmo.hide()
+		camera._dragging = false
+		Input.set_default_cursor_shape(Input.CURSOR_ARROW)
+	else:
+		tools.set_tool(tools.tool)
+	tools.set_process(not blocked)
+	tools.set_process_unhandled_input(not blocked)
+	camera.set_process(not blocked)
+	camera.set_process_unhandled_input(not blocked)
 
 func select_preset(shape: StructurePresets.Shape) -> void:
 	var structure := StructurePresets.generate(shape)
 	_present(structure, shape)
+	hud.set_welcome_visible(false)
 
 func _present(structure: OctaStructure, preset: int = -1) -> void:
 	tools.reset()
@@ -96,6 +129,14 @@ func replay() -> void:
 	tools.commit()
 	renderer.replay()
 
+func undo() -> void:
+	if tools.undo():
+		hud.notify("Undid last stroke")
+
+func redo() -> void:
+	if tools.redo():
+		hud.notify("Redid stroke")
+
 func select_tool(tool: StructureTools.Tool) -> void:
 	tools.set_tool(tool)
 	hud.tools.show_tool(tool)
@@ -134,8 +175,31 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	# Keep shortcuts out of modal file dialogs.
 	if _save_dialog.visible or _load_dialog.visible:
 		return
-	if hud.help.visible and event.physical_keycode in [KEY_ESCAPE, KEY_H, KEY_F1]:
-		hud.set_help_visible(false)
+	if hud.library.visible:
+		if event.physical_keycode == KEY_ESCAPE:
+			hud.set_library_visible(false)
+		get_viewport().set_input_as_handled()
+		return
+	if hud.welcome.visible:
+		if event.physical_keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_ESCAPE]:
+			enter_studio()
+		get_viewport().set_input_as_handled()
+		return
+	if hud.help.visible:
+		if event.physical_keycode in [KEY_ESCAPE, KEY_H, KEY_F1]:
+			hud.set_help_visible(false)
+		get_viewport().set_input_as_handled()
+		return
+	if (event.ctrl_pressed or event.meta_pressed) and not event.alt_pressed:
+		if event.physical_keycode == KEY_Z:
+			if event.shift_pressed:
+				redo()
+			else:
+				undo()
+			get_viewport().set_input_as_handled()
+		elif event.physical_keycode == KEY_Y:
+			redo()
+			get_viewport().set_input_as_handled()
 		return
 	match event.physical_keycode:
 		KEY_1, KEY_2, KEY_3, KEY_4:
@@ -202,6 +266,8 @@ func _load_structure(path: String) -> void:
 		_show_error(_files.last_error)
 		return
 	_present(structure)
+	hud.set_library_visible(false)
+	hud.set_welcome_visible(false)
 	hud.notify("Loaded " + path.get_file())
 
 func _show_error(message: String) -> void:

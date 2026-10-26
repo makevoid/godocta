@@ -30,20 +30,25 @@ var _size_box: VBoxContainer
 var _color_box: VBoxContainer
 var _tilt_box: VBoxContainer
 var _column: VBoxContainer
+var _heading: Label
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
-	offset_left = -218
-	offset_right = -16
+	offset_left = -290
+	offset_right = -24
 	# Zero height plus an upward growth direction: the panel takes its height from
 	# the sections currently shown and keeps its bottom right corner pinned.
-	offset_top = -16
-	offset_bottom = -16
+	offset_top = -60
+	offset_bottom = -60
 	grow_vertical = Control.GROW_DIRECTION_BEGIN
 	add_theme_stylebox_override("panel", StudioTheme.card())
 	_column = VBoxContainer.new()
-	_column.add_theme_constant_override("separation", 10)
+	_column.add_theme_constant_override("separation", 16)
 	add_child(_column)
+	_column.add_child(StudioTheme.label("TOOL SETTINGS", 10, StudioTheme.ACCENT))
+	_heading = StudioTheme.label("Brush in", 21)
+	_column.add_child(_heading)
+	_column.add_child(HSeparator.new())
 	_build_size()
 	_build_colors()
 	_build_tilt()
@@ -56,13 +61,14 @@ func _build_size() -> void:
 	_size_box = VBoxContainer.new()
 	_size_box.add_theme_constant_override("separation", 4)
 	var row := HBoxContainer.new()
-	row.add_child(StudioTheme.label("BRUSH SIZE   [ ]", 9, StudioTheme.MUTED))
-	_radius_label = StudioTheme.label("", 11, StudioTheme.ACCENT)
+	row.add_child(StudioTheme.label("RADIUS  [ ]", 11, StudioTheme.MUTED))
+	_radius_label = StudioTheme.label("", 12, StudioTheme.ACCENT)
 	_radius_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_radius_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	row.add_child(_radius_label)
 	_size_box.add_child(row)
 	_radius = HSlider.new()
+	_radius.custom_minimum_size.y = 30
 	_radius.min_value = StructureTools.MIN_RADIUS
 	_radius.max_value = StructureTools.MAX_RADIUS
 	_radius.step = 0.1
@@ -77,7 +83,7 @@ func _build_size() -> void:
 func _build_colors() -> void:
 	_color_box = VBoxContainer.new()
 	_color_box.add_theme_constant_override("separation", 5)
-	_color_box.add_child(StudioTheme.label("BRUSH COLOR", 9, StudioTheme.MUTED))
+	_color_box.add_child(StudioTheme.label("MATERIAL COLOR", 11, StudioTheme.MUTED))
 	var group := ButtonGroup.new()
 	auto_button = StudioTheme.button(AUTO_COLOR_NAME, 0, 26)
 	auto_button.icon = _swatch(StudioTheme.MUTED)
@@ -93,7 +99,7 @@ func _build_colors() -> void:
 	grid.add_theme_constant_override("h_separation", 4)
 	grid.add_theme_constant_override("v_separation", 4)
 	for index in OctaPalette.NAMES.size():
-		var button := StudioTheme.button("", 42, 24)
+		var button := StudioTheme.button("", 52, 34)
 		button.icon = _swatch(OctaPalette.color_of(OctaPalette.HEX[index]))
 		button.toggle_mode = true
 		button.button_group = group
@@ -136,6 +142,7 @@ func _build_tilt() -> void:
 ## Only the sections the selected tool uses stay on screen; orbit hides the panel.
 func show_tool(tool: StructureTools.Tool) -> void:
 	_tool = tool
+	_heading.text = StructureTools.NAMES[tool]
 	visible = tool != StructureTools.Tool.NAVIGATE
 	_size_box.visible = visible
 	_color_box.visible = _has_palette and tool == StructureTools.Tool.BRUSH_IN

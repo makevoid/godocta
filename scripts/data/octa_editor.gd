@@ -9,6 +9,7 @@ var structure: OctaStructure
 ## The Y coordinate of cells that rest on the ground; nothing is added below it.
 var ground_layer: int
 var _span: float
+var _colored: bool
 var _index: Dictionary = {} # Vector3i → original index
 var _removed: Dictionary = {} # original index → true
 var _added: Dictionary = {} # Vector3i → palette index (-1 uncolored), in insertion order
@@ -18,6 +19,8 @@ var _bounds: AABB
 func _init(data: OctaStructure, layer: Variant = null) -> void:
 	structure = data
 	_span = data.cell_span
+	# Keep painting colors after an erase leaves no cells but retains the palette.
+	_colored = data.is_colored() or (data.cell_count() == 0 and not data.palette.is_empty())
 	var cells := data.packed_cells()
 	var lowest := 1 << 30
 	for index in cells.size() / 3:
@@ -78,7 +81,7 @@ func remove(cell: Vector3i) -> bool:
 ## Palette index for a new cell: its neighbors' most common color, else fallback.
 ## Uncolored structures always return -1.
 func color_for(cell: Vector3i, fallback: int = 0) -> int:
-	if not structure.is_colored():
+	if not _colored:
 		return -1
 	var votes: Dictionary = {}
 	var best := -1
@@ -93,7 +96,7 @@ func color_for(cell: Vector3i, fallback: int = 0) -> int:
 ## The palette index a new cell takes: the chosen color when it is in the palette, else
 ## its neighbors' vote. Uncolored structures always return -1, whatever is chosen.
 func color_choice(cell: Vector3i, chosen: int, fallback: int = 0) -> int:
-	if not structure.is_colored():
+	if not _colored:
 		return -1
 	if chosen >= 0:
 		return mini(chosen, structure.palette.size() - 1)
@@ -162,7 +165,7 @@ func pick(origin: Vector3, direction: Vector3) -> Dictionary:
 ## The edited structure: surviving cells in their original order, then additions.
 func build() -> OctaStructure:
 	var source := structure.packed_cells()
-	var colored := structure.is_colored()
+	var colored := _colored
 	var cells := PackedInt32Array()
 	var colors := PackedByteArray()
 	cells.resize((_index.size() - _removed.size() + _added.size()) * 3)

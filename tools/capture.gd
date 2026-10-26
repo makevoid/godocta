@@ -7,6 +7,7 @@ extends SceneTree
 ##   --at=0.25,0.6                 Also capture mid-assembly at these fractions (hero view).
 ##   --bench                       Also print average CPU/GPU render time per frame (hero view).
 ##   --gap=0.045 --out=captures
+##   --ui                          Also capture welcome, library, tools and help.
 
 const VIEWS := {
 	"hero": Vector2(0.68, 0.48),
@@ -31,6 +32,9 @@ func _run() -> void:
 	root.add_child(studio)
 	current_scene = studio
 	await process_frame
+	if options.has("ui"):
+		await _capture_ui()
+	studio.hud.set_welcome_visible(false)
 	var all_names := Array(StructurePresets.TITLES).map(func(t: String) -> String: return t.to_lower())
 	for path in studio.hud.toolbar.gallery_paths:
 		all_names.append(path.get_file().get_basename())
@@ -64,6 +68,56 @@ func _run() -> void:
 				_set_view(view)
 				await _capture("%s-%s%s" % [name, view, suffix])
 	quit(0)
+
+func _capture_ui() -> void:
+	await _capture("ui-welcome")
+	studio.hud.set_library_visible(true)
+	await _capture("ui-library")
+	studio.hud.set_library_visible(false)
+	studio.hud.set_welcome_visible(false)
+	_show("castle")
+	studio.renderer.seek(1.0)
+	studio.select_tool(StructureTools.Tool.BRUSH_IN)
+	await _capture("ui-workspace")
+	studio.hud.set_help_visible(true)
+	await _capture("ui-help")
+	studio.hud.set_help_visible(false)
+	studio.select_tool(StructureTools.Tool.NAVIGATE)
+	studio.hud.toolbar.set_setting_checked(StructureToolbar.Setting.ORBIT, true)
+	studio.hud.toolbar.settings.show_popup()
+	await _capture("ui-settings")
+	studio.hud.toolbar.settings.get_popup().hide()
+	studio.hud.toolbar.set_setting_checked(StructureToolbar.Setting.ORBIT, false)
+	# Same UI at the minimum supported window size; restore it for regular shots.
+	var previous_size := root.size
+	root.size = Vector2i(1100, 720)
+	studio.hud.set_welcome_visible(true)
+	await _capture("ui-welcome-small")
+	studio.hud.set_library_visible(true)
+	await _capture("ui-library-small")
+	studio.hud.set_library_visible(false)
+	studio.hud.set_welcome_visible(false)
+	studio.select_tool(StructureTools.Tool.BRUSH_IN)
+	studio.hud.options.set_more_expanded(true)
+	await _capture("ui-workspace-small")
+	studio.hud.options.set_more_expanded(false)
+	studio.select_tool(StructureTools.Tool.NAVIGATE)
+	root.size = previous_size
+	# Exercise active and disabled history controls alongside the actual restored build.
+	_show("cube")
+	studio.renderer.seek(1.0)
+	studio.select_tool(StructureTools.Tool.BLACK_HOLE)
+	studio.set_brush_radius(3.0)
+	var data := studio.renderer.structure
+	studio.tools.apply(OctaLattice.to_world(data.coordinate(data.cell_count() - 1), data.cell_span))
+	studio.tools.commit()
+	await create_timer(StructureTools.SWALLOW_TIME).timeout
+	await _capture("ui-history-edited")
+	studio.undo()
+	await _capture("ui-history-undone")
+	studio.redo()
+	await _capture("ui-history-redone")
+	studio.select_tool(StructureTools.Tool.NAVIGATE)
 
 ## Hidden windows are throttled, so FPS is meaningless here, and the Compatibility
 ## renderer doesn't report GPU time. Instead, force-draw frames and read pixels back,

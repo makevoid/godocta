@@ -17,6 +17,7 @@ func _run() -> void:
 	check(studio.renderer.structure.cell_count() == 1729, "Scene starts with cube")
 	check(studio.renderer.multimesh.instance_count == 1729, "All cells uploaded")
 	check(studio.renderer.get_child_count() == 0, "No node allocated per cell")
+	_test_interface()
 	if capture:
 		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://captures"))
 	for shape in 4:
@@ -73,6 +74,7 @@ func _run() -> void:
 	check(not studio.renderer.xray, "X-ray toggles off")
 	await _test_tools()
 	_test_black_hole_depth()
+	_test_undo_redo()
 	# Generated builds load from the gallery with their palette.
 	var gallery := studio.hud.toolbar.gallery_paths
 	check(gallery.size() >= 5, "Builds gallery lists generated structures")
@@ -92,6 +94,48 @@ func _run() -> void:
 	check(studio.renderer.multimesh.instance_count == 0 and not studio.renderer.is_processing(), "Empty file renders safely")
 	print("Scene integration: %s" % ("PASS" if failures == 0 else "FAIL"))
 	quit(1 if failures else 0)
+
+## Menu actions, search, and overlays must not leak input into the sandbox.
+func _test_interface() -> void:
+	check(studio.hud.welcome.visible and not studio.camera.is_processing_unhandled_input(),
+		"Welcome owns input on launch")
+	studio.hud.welcome.enter_button.pressed.emit()
+	check(not studio.hud.has_overlay() and studio.camera.is_processing_unhandled_input(),
+		"Enter opens the studio and restores navigation")
+	studio.hud.toolbar.library_requested.emit()
+	var library := studio.hud.library
+	check(library.visible and not studio.tools.is_processing(), "Build library suspends brush processing")
+	library.search.text_changed.emit("castle")
+	var matches := library._buttons.filter(func(button: Button) -> bool: return button.visible)
+	check(not matches.is_empty(), "Build search finds castle filenames")
+	for button: Button in matches:
+		check(button.text.to_lower().contains("castle"), "Search hides nonmatching filenames")
+	library.search.text_changed.emit("no-such-octa-world-123")
+	check(library._empty.visible, "An empty search has an explanation")
+	library.search.text_changed.emit("")
+	var castle := studio.hud.toolbar.gallery_paths.find("res://structures/castle.octa")
+	library._buttons[castle].pressed.emit()
+	check(studio.renderer.structure.title == "Castle" and not studio.hud.has_overlay(),
+		"Library cards load their file and dismiss the menu")
+	studio.hud.toolbar.home_requested.emit()
+	check(studio.hud.welcome.visible and studio.renderer.structure.title == "Castle",
+		"Home preserves the current structure")
+	var key := InputEventKey.new()
+	key.pressed = true
+	key.physical_keycode = KEY_X
+	studio._unhandled_key_input(key)
+	check(not studio.renderer.xray, "Welcome suppresses world shortcuts")
+	key.physical_keycode = KEY_ENTER
+	studio._unhandled_key_input(key)
+	check(not studio.hud.welcome.visible, "Enter also opens the studio from the keyboard")
+	studio.hud.toggle_help()
+	key.physical_keycode = KEY_B
+	studio._unhandled_key_input(key)
+	check(studio.tools.tool == StructureTools.Tool.NAVIGATE, "Help suppresses tool shortcuts")
+	key.physical_keycode = KEY_ESCAPE
+	studio._unhandled_key_input(key)
+	check(not studio.hud.has_overlay() and studio.tools.is_processing(), "Escape closes help and restores tools")
+	studio.select_preset(StructurePresets.Shape.CUBE)
 
 ## Brush tools: palette wiring, pending edits, in-place commits and HUD counts.
 func _test_tools() -> void:
@@ -252,6 +296,136 @@ func _test_brush_colors() -> void:
 	studio.select_preset(StructurePresets.Shape.CUBE)
 	check(tools.brush_color == -1 and options.color_buttons[4].disabled, "An uncolored build falls back to auto")
 	check(not options._color_box.visible, "Uncolored builds hide the color grid")
+
+## Each mouse stroke is an action, including pending effects and an entirely erased build.
+func _test_undo_redo() -> void:
+	var tools := studio.tools
+	var dock := studio.hud.tools
+	var source := OctaStructure.from_cells(PackedInt32Array([0, -2, 0, 2, -2, 0]), "History", 0.5)
+	source.set_colors(PackedByteArray([3, 12]), OctaPalette.colors())
+	studio._present(source)
+	studio.select_tool(StructureTools.Tool.BRUSH_IN)
+	studio.set_brush_radius(1.5)
+	studio.set_brush_color(7)
+	var origin := studio.renderer.position
+	var focus := studio.camera.focus
+	var center := Vector3(0, -0.5, 0)
+	var press := InputEventMouseButton.new()
+	press.button_index = MOUSE_BUTTON_LEFT
+	press.pressed = true
+	var release := InputEventMouseButton.new()
+	release.button_index = MOUSE_BUTTON_LEFT
+	check(dock.undo_button.disabled and dock.redo_button.disabled, "History starts disabled")
+	tools._unhandled_input(press)
+	tools.apply(center)
+	tools.apply(center)
+	tools._animate()
+	var first := tools.editor.build()
+	check(first.cell_count() > source.cell_count() and not dock.undo_button.disabled,
+		"A pending brush stroke enables Undo")
+	tools._unhandled_input(release)
+	tools._unhandled_input(press)
+	_check_snapshot(studio.renderer.structure, first, "Next click commits the previous stroke")
+	tools.apply(Vector3(2, -0.5, 0))
+	tools._animate()
+	var second := tools.editor.build()
+	check(second.cell_count() > first.cell_count(), "Second rapid stroke also adds cells")
+	dock.undo_button.pressed.emit()
+	_check_snapshot(studio.renderer.structure, first, "Undo affects only the last rapid stroke")
+	check(not tools._stroking and tools._pending.multimesh.instance_count == 0,
+		"Undo ends the stroke and clears flying additions immediately")
+	dock.undo_button.pressed.emit()
+	_check_snapshot(studio.renderer.structure, source, "Undo restores the original colored build")
+	check(dock.undo_button.disabled and not dock.redo_button.disabled, "History buttons follow availability")
+	var key := InputEventKey.new()
+	key.pressed = true
+	key.physical_keycode = KEY_Z
+	key.meta_pressed = true
+	key.shift_pressed = true
+	studio._unhandled_key_input(key)
+	_check_snapshot(studio.renderer.structure, first, "Cmd+Shift+Z redoes exact colors and order")
+	key.meta_pressed = false
+	key.ctrl_pressed = true
+	key.shift_pressed = false
+	key.physical_keycode = KEY_Y
+	studio._unhandled_key_input(key)
+	_check_snapshot(studio.renderer.structure, second, "Ctrl+Y redoes the second stroke")
+	studio.select_tool(StructureTools.Tool.BLACK_HOLE)
+	studio.set_brush_radius(12.0)
+	tools.apply(center)
+	tools._animate()
+	check(tools.editor.cell_count() == 0 and tools._vortex.multimesh.instance_count > 0,
+		"Black hole can swallow the whole build")
+	key.physical_keycode = KEY_Z
+	studio._unhandled_key_input(key)
+	_check_snapshot(studio.renderer.structure, second, "Ctrl+Z restores cells during the swallow animation")
+	check(tools._vortex.multimesh.instance_count == 0 and tools._swallowed.is_empty(),
+		"Undo clears swallowed effects immediately")
+	tools.apply(Vector3(100, 100, 100))
+	tools.commit()
+	check(tools.can_redo(), "An empty stroke preserves redo")
+	dock.redo_button.pressed.emit()
+	check(studio.renderer.structure.cell_count() == 0 and tools.editor.ground_layer == -2,
+		"Redo restores an empty build without moving its ground")
+	check(studio.renderer.position == origin and studio.camera.focus == focus,
+		"History preserves renderer origin and camera framing")
+	studio.select_tool(StructureTools.Tool.BRUSH_IN)
+	studio.set_brush_radius(1.5)
+	tools.apply(center)
+	tools.commit()
+	check(studio.renderer.structure.is_colored() and studio.renderer.structure.color_index(0) == 7,
+		"Painting after a complete erase retains the palette and chosen color")
+	check(tools.undo() and tools.undo(), "Multiple actions remain undoable")
+	studio.hud.set_help_visible(true)
+	var blocked := studio.renderer.structure
+	studio._unhandled_key_input(key)
+	check(studio.renderer.structure == blocked, "Modal help suppresses undo shortcuts")
+	studio.hud.set_help_visible(false)
+	tools.apply(Vector3(3, -0.5, 0))
+	check(not tools.can_redo() and dock.redo_button.disabled, "A new edit immediately clears redo")
+	studio.select_tool(StructureTools.Tool.BLACK_HOLE)
+	check(not tools.editor.has_changes(), "Switching tools commits the previous action")
+	studio.replay()
+	check(tools._undo.size() == 3, "Replay does not add an empty history entry")
+	_test_history_limit()
+	studio.select_preset(StructurePresets.Shape.CUBE)
+	check(not tools.can_undo() and not tools.can_redo() and dock.undo_button.disabled and dock.redo_button.disabled,
+		"Switching builds clears both history stacks")
+	studio.select_tool(StructureTools.Tool.NAVIGATE)
+
+func _test_history_limit() -> void:
+	var cells := PackedInt32Array()
+	for index in 12:
+		cells.append_array(PackedInt32Array([index * 4, -2, 0]))
+	var data := OctaStructure.from_cells(cells, "History limit", 0.5)
+	studio._present(data)
+	studio.select_tool(StructureTools.Tool.BLACK_HOLE)
+	studio.set_brush_radius(0.6)
+	var states: Array[OctaStructure] = [data]
+	for index in 12:
+		studio.tools.apply(Vector3(index, -0.5, 0))
+		studio.tools.commit()
+		states.append(studio.renderer.structure)
+		check(studio.renderer.structure.cell_count() == 11 - index, "Limit fixture removes one cell per stroke")
+	for index in 10:
+		check(studio.tools.undo(), "The last ten strokes can be undone")
+		_check_snapshot(studio.renderer.structure, states[11 - index], "Undo restores the matching state")
+	check(not studio.tools.undo(), "The eleventh Undo stops at the history limit")
+	for index in 10:
+		check(studio.tools.redo(), "All ten undone strokes can be redone")
+		_check_snapshot(studio.renderer.structure, states[3 + index], "Redo restores the matching state")
+	check(not studio.tools.redo(), "Redo stops after ten restored strokes")
+	studio.tools.undo()
+	# A successful file load also uses _present(), and must clear redo as well as undo.
+	studio._present(data)
+	check(not studio.tools.can_undo() and not studio.tools.can_redo(), "Presenting a build clears both stacks")
+	studio.tools.apply(Vector3(0, -0.5, 0))
+	studio.tools.commit()
+
+func _check_snapshot(actual: OctaStructure, expected: OctaStructure, message: String) -> void:
+	check(actual.packed_cells() == expected.packed_cells() and actual.packed_colors() == expected.packed_colors()
+		and actual.palette == expected.palette and actual.title == expected.title
+		and actual.cell_span == expected.cell_span, message)
 
 func _capture(name: String) -> void:
 	await RenderingServer.frame_post_draw

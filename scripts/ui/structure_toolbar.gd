@@ -1,6 +1,6 @@
 class_name StructureToolbar
 extends PanelContainer
-## The top bar: wordmark, tool strip, the Primitives and Builds menus, the structure
+## The top bar: home, the Primitives and Builds menus, the structure
 ## readout filled by `StudioHUD`, file actions, help and the settings menu. Primitives
 ## sit in a menu because builds are the main entry point. Infrequent switches — X-ray,
 ## auto orbit and the optional scoop — live in the settings menu instead of the bar.
@@ -12,14 +12,15 @@ signal save_requested
 signal load_requested
 signal reset_view_requested
 signal help_requested
+signal home_requested
+signal library_requested
 signal orbit_changed(enabled: bool)
 signal xray_changed(enabled: bool)
 signal scoop_enabled_changed(enabled: bool)
 const STRUCTURES_DIR := "res://structures"
-const HEIGHT := 50.0
+const HEIGHT := 76.0
 ## Settings popup item ids.
 enum Setting { XRAY, ORBIT, SCOOP }
-var tools: ToolPalette
 var shapes: MenuButton
 var gallery: MenuButton
 var settings: MenuButton
@@ -30,29 +31,26 @@ var info_slot: VBoxContainer
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
 	offset_bottom = HEIGHT
-	var background := StudioTheme.panel(Color("10191d"), StudioTheme.LINE, 0, 18, 8)
+	var background := StudioTheme.panel(StudioTheme.INK, StudioTheme.LINE, 0, 24, 16)
 	add_theme_stylebox_override("panel", background)
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 8)
+	row.add_theme_constant_override("separation", 12)
 	add_child(row)
-	var logo := TextureRect.new()
-	logo.texture = preload("res://assets/octa.svg")
-	logo.custom_minimum_size = Vector2(26, 26)
-	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	row.add_child(logo)
-	var wordmark := StudioTheme.label("O C T A", 16)
-	wordmark.custom_minimum_size.x = 66
-	wordmark.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	row.add_child(wordmark)
+	var home := StudioTheme.button("O C T A", 150, 42)
+	home.icon = preload("res://assets/octa.svg")
+	home.add_theme_constant_override("icon_max_width", 30)
+	home.add_theme_font_size_override("font_size", 20)
+	home.tooltip_text = "Back to the welcome screen"
+	home.pressed.connect(func() -> void: home_requested.emit())
+	row.add_child(home)
 	row.add_child(VSeparator.new())
-	tools = ToolPalette.new()
-	row.add_child(tools)
-	var gap := Control.new()
-	gap.custom_minimum_size.x = 18
-	row.add_child(gap)
 	_build_shapes(row)
 	_build_gallery(row)
+	var library := StudioTheme.button("Explore builds", 132)
+	StudioTheme.primary(library)
+	library.tooltip_text = "Search the full collection of worlds"
+	library.pressed.connect(func() -> void: library_requested.emit())
+	row.add_child(library)
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(spacer)
@@ -79,7 +77,6 @@ func _build_shapes(row: HBoxContainer) -> void:
 func _build_gallery(row: HBoxContainer) -> void:
 	gallery = StudioTheme.menu("Builds  ▾", 118)
 	gallery.icon = preload("res://assets/castle.svg")
-	StudioTheme.primary(gallery)
 	gallery.tooltip_text = "Large structures from structures/*.octa · shortcuts 5–9"
 	gallery.get_popup().id_pressed.connect(func(id: int) -> void: file_selected.emit(gallery_paths[id]))
 	row.add_child(gallery)
@@ -94,11 +91,11 @@ func _build_actions(row: HBoxContainer) -> void:
 	save_button.tooltip_text = "Save the arrangement as a compact .octa file"
 	save_button.pressed.connect(func() -> void: save_requested.emit())
 	row.add_child(save_button)
-	var reset := StudioTheme.button("Reset  F", 76)
+	var reset := StudioTheme.button("Frame  F", 88)
 	reset.tooltip_text = "Restore the default framing"
 	reset.pressed.connect(func() -> void: reset_view_requested.emit())
 	row.add_child(reset)
-	var replay := StudioTheme.button("Replay  R", 84)
+	var replay := StudioTheme.button("Replay  R", 94)
 	replay.add_theme_color_override("font_color", StudioTheme.ACCENT)
 	replay.pressed.connect(func() -> void: replay_requested.emit())
 	row.add_child(replay)

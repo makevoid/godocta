@@ -1,0 +1,38 @@
+{
+  "name": "button-chrome",
+  "request_id": "01a10ef4-79f0-7571-904d-6520860ae003",
+  "elapsed_seconds": 0.55,
+  "prompt": {
+    "purpose": "One single production UI button skin, a text-free nine-slice source texture for a premium futuristic architectural sandbox. Exactly 768x256 pixels. It must be useful as an actual button background, not a mockup or a sheet.",
+    "subject": "A single wide, clean dark marine-blue UI button with a restrained crisp neon-aqua perimeter line and subtly chamfered corners. Precision blueprint aesthetic, modern, inviting and sophisticated. Dark translucent-glass-like material but rendered fully opaque.",
+    "layout": "The button fills the entire canvas from edge to edge. The outer aqua hairline rectangular border runs 4 pixels inside all four image edges. Each corner has a tiny 20-pixel chamfer, not rounded. The central 85 percent of the width and central 65 percent of the height must be perfectly smooth, blank and quiet so native UI labels can be placed there. A tiny double aqua tick in the lower right corner within 28 pixels of the edges. No separate objects. No second inset rectangle. No large spaces outside the button.",
+    "style": "Flat orthographic game UI chrome. Pixel-crisp edges, restrained delicate luminous edge, understated premium sci-fi drafting instrument. No chunky bevel or heavy ornament.",
+    "materials": "Smooth deep navy fill, a faint vertical navy gradient, matte glass surface, fine aqua edge highlight.",
+    "palette": "Background/button fill #102D3E, edge #53F5DE at moderate brightness, corners outside the chamfer #07131F. No other colors.",
+    "text": "None. Absolutely no text, symbols, letters or numbers.",
+    "light": "Even UI lighting. Any glow must stay within 5 pixels of the perimeter. The center remains dark and flat.",
+    "camera": "Straight-on 2D rectangle, exactly 3:1 aspect ratio, no perspective, no rotation, no cast shadows.",
+    "technical": "Opaque PNG. This will be reduced to 192x64 and used with nine-slice margins of 8 pixels; the middle must stretch cleanly. All decoration must remain inside the outer 28 pixel band.",
+    "exclude": "No mockup, no device, no scene, no background outside the button, no extra buttons, no button grid, no label, no icon, no hexagon in the middle, no texture noise, no scanlines, no watermark, no extruded 3D border, no white interior, no drop shadow."
+  },
+  "prompt_text": "PURPOSE: One single production UI button skin, a text-free nine-slice source texture for a premium futuristic architectural sandbox. Exactly 768x256 pixels. It must be useful as an actual button background, not a mockup or a sheet.\nSUBJECT: A single wide, clean dark marine-blue UI button with a restrained crisp neon-aqua perimeter line and subtly chamfered corners. Precision blueprint aesthetic, modern, inviting and sophisticated. Dark translucent-glass-like material but rendered fully opaque.\nLAYOUT: The button fills the entire canvas from edge to edge. The outer aqua hairline rectangular border runs 4 pixels inside all four image edges. Each corner has a tiny 20-pixel chamfer, not rounded. The central 85 percent of the width and central 65 percent of the height must be perfectly smooth, blank and quiet so native UI labels can be placed there. A tiny double aqua tick in the lower right corner within 28 pixels of the edges. No separate objects. No second inset rectangle. No large spaces outside the button.\nSTYLE: Flat orthographic game UI chrome. Pixel-crisp edges, restrained delicate luminous edge, understated premium sci-fi drafting instrument. No chunky bevel or heavy ornament.\nMATERIALS: Smooth deep navy fill, a faint vertical navy gradient, matte glass surface, fine aqua edge highlight.\nPALETTE: Background/button fill #102D3E, edge #53F5DE at moderate brightness, corners outside the chamfer #07131F. No other colors.\nTEXT: None. Absolutely no text, symbols, letters or numbers.\nLIGHT: Even UI lighting. Any glow must stay within 5 pixels of the perimeter. The center remains dark and flat.\nCAMERA/FRAME: Straight-on 2D rectangle, exactly 3:1 aspect ratio, no perspective, no rotation, no cast shadows.\nTECHNICAL: Opaque PNG. This will be reduced to 192x64 and used with nine-slice margins of 8 pixels; the middle must stretch cleanly. All decoration must remain inside the outer 28 pixel band.\nEXCLUDE: No mockup, no device, no scene, no background outside the button, no extra buttons, no button grid, no label, no icon, no hexagon in the middle, no texture noise, no scanlines, no watermark, no extruded 3D border, no white interior, no drop shadow.",
+  "input": {
+    "image_size": {
+      "width": 768,
+      "height": 256
+    },
+    "quality": "xhigh",
+    "background": "opaque",
+    "output_format": "png",
+    "num_images": 1,
+    "sync_mode": false
+  },
+  "images": [
+    {
+      "url": "https://v3b.fal.media/files/b/0aad3bea/EwaNLm4Xn5Q6sUVXrPExc_chPxWYgE.png",
+      "content_type": "image/png",
+      "file_name": "EwaNLm4Xn5Q6sUVXrPExc_chPxWYgE.png",
+      "path": "/Users/makevoid/apps/godocta/assets/ui/button-chrome.png"
+    }
+  ]
+}
