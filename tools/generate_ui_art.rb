@@ -22,6 +22,15 @@ results = Sunburst.generator.generate_batch(specs, on_event: ->(event, **data) {
   puts "#{event}: #{data[:name]}#{data[:job] ? " / #{data[:job].request_id}" : ""}"
 })
 results.each { |name, result| abort "#{name}: #{result.message}" if result.is_a?(StandardError) }
+# Keep checked-in provenance portable instead of recording the author's home directory.
+results.each_key do |name|
+  sidecar = root.join("assets/ui/#{name}.json")
+  metadata = JSON.parse(sidecar.read)
+  metadata.fetch("images").each do |image|
+    image["path"] = Pathname.new(image.fetch("path")).relative_path_from(root).to_s
+  end
+  sidecar.write(JSON.pretty_generate(metadata) + "\n")
+end
 # macOS's built-in resampler makes the small nine-slice runtime skin from its master.
 if RUBY_PLATFORM.include?("darwin")
   abort "Could not resize button chrome" unless system("sips", "-z", "64", "192",

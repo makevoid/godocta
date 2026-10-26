@@ -3,3 +3,18 @@
 *.tmp
 captures/
 preview/
+
+# Local credentials and Godot export signing settings.
+.env
+.env.*
+!.env.example
+.fal_ai_api_key
+.fal_key
+export_credentials.cfg
+
+# Release output and local tooling caches.
+dist/
+build/
+__pycache__/
+*.pyc
+.venv/

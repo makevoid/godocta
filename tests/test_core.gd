@@ -3,7 +3,7 @@ extends SceneTree
 
 var checks: int = 0
 var failures: int = 0
-const TEMP_FILE := "/private/tmp/godocta-roundtrip.octa"
+var temp_file := OS.get_temp_dir().path_join("godocta-roundtrip-%d.octa" % OS.get_process_id())
 
 func _initialize() -> void:
 	_test_geometry()
@@ -159,19 +159,19 @@ func _test_files() -> void:
 		var source := StructurePresets.generate(shape as StructurePresets.Shape)
 		source.title += " · round trip"
 		source.cell_span = 1.25
-		check(codec.save_structure(TEMP_FILE, source) == OK, "Save compact file")
-		var loaded := codec.load_structure(TEMP_FILE)
+		check(codec.save_structure(temp_file, source) == OK, "Save compact file")
+		var loaded := codec.load_structure(temp_file)
 		check(loaded != null, "Load compact file")
 		if loaded != null:
 			check(loaded.packed_cells() == source.packed_cells(), "Coordinates survive round trip, including negatives")
 			check(loaded.title == source.title and loaded.cell_span == source.cell_span, "Metadata survives round trip")
-		check(FileAccess.get_file_as_bytes(TEMP_FILE).size() == 20 + source.title.to_utf8_buffer().size() + source.storage_bytes(), "Exact binary file size")
+		check(FileAccess.get_file_as_bytes(temp_file).size() == 20 + source.title.to_utf8_buffer().size() + source.storage_bytes(), "Exact binary file size")
 	var empty := OctaStructure.from_cells(PackedInt32Array())
-	check(codec.save_structure(TEMP_FILE, empty) == OK, "Empty arrangement can be saved")
-	check(codec.load_structure(TEMP_FILE).cell_count() == 0, "Empty arrangement round trip")
+	check(codec.save_structure(temp_file, empty) == OK, "Empty arrangement can be saved")
+	check(codec.load_structure(temp_file).cell_count() == 0, "Empty arrangement round trip")
 	var small := OctaStructure.from_cells(PackedInt32Array([-1, -1, -1, 1, 1, 1]), "x")
-	codec.save_structure(TEMP_FILE, small)
-	var valid := FileAccess.get_file_as_bytes(TEMP_FILE)
+	codec.save_structure(temp_file, small)
+	var valid := FileAccess.get_file_as_bytes(temp_file)
 	for mutation in ["magic", "version", "count", "title", "truncated", "trailing", "parity", "duplicate", "nan"]:
 		var bytes := valid.duplicate()
 		match mutation:
@@ -186,11 +186,11 @@ func _test_files() -> void:
 				for offset in [33, 37, 41]:
 					bytes.encode_s32(offset, -1)
 			"nan": bytes.encode_float(8, NAN)
-		var file := FileAccess.open(TEMP_FILE, FileAccess.WRITE)
+		var file := FileAccess.open(temp_file, FileAccess.WRITE)
 		file.store_buffer(bytes)
 		file.close()
-		check(codec.load_structure(TEMP_FILE) == null and not codec.last_error.is_empty(), "Reject %s file" % mutation)
-	DirAccess.remove_absolute(TEMP_FILE)
+		check(codec.load_structure(temp_file) == null and not codec.last_error.is_empty(), "Reject %s file" % mutation)
+	DirAccess.remove_absolute(temp_file)
 
 func _test_colors() -> void:
 	var codec := OctaFile.new()
@@ -204,10 +204,10 @@ func _test_colors() -> void:
 	check(not structure.set_colors(PackedByteArray([0, 0, 0]), too_many).is_empty(), "Reject palettes over 16 colors")
 	check(structure.set_colors(PackedByteArray([0, 1, 1]), palette).is_empty(), "Accept valid colors")
 	check(structure.color_index(1) == 1 and structure.storage_bytes() == 39, "13 bytes per colored cell")
-	check(codec.save_structure(TEMP_FILE, structure) == OK, "Save colored file")
-	var bytes := FileAccess.get_file_as_bytes(TEMP_FILE)
+	check(codec.save_structure(temp_file, structure) == OK, "Save colored file")
+	var bytes := FileAccess.get_file_as_bytes(temp_file)
 	check(bytes.decode_u32(4) == 2 and bytes.size() == 24 + 7 + 6 + 39, "Colored files are OCTA v2")
-	var loaded := codec.load_structure(TEMP_FILE)
+	var loaded := codec.load_structure(temp_file)
 	check(loaded != null and loaded.packed_colors() == structure.packed_colors(), "Colors survive round trip")
 	if loaded != null:
 		check(loaded.palette.size() == 2 and loaded.palette[0].r8 == 200 and loaded.palette[1].b8 == 200, "Palette survives round trip")
@@ -217,11 +217,11 @@ func _test_colors() -> void:
 			"index": broken[broken.size() - 1] = 2
 			"palette": broken.encode_u32(20, 17)
 			"short": broken.resize(broken.size() - 1)
-		var file := FileAccess.open(TEMP_FILE, FileAccess.WRITE)
+		var file := FileAccess.open(temp_file, FileAccess.WRITE)
 		file.store_buffer(broken)
 		file.close()
-		check(codec.load_structure(TEMP_FILE) == null, "Reject colored file with bad %s" % mutation)
-	DirAccess.remove_absolute(TEMP_FILE)
+		check(codec.load_structure(temp_file) == null, "Reject colored file with bad %s" % mutation)
+	DirAccess.remove_absolute(temp_file)
 
 ## Brush-tool editing: nearest-cell lookup, picking, erasing regions and attached growth.
 func _test_editor() -> void:

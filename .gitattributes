@@ -1,0 +1,17 @@
+* text=auto
+*.gd text eol=lf
+*.gdshader text eol=lf
+*.gdshaderinc text eol=lf
+*.tscn text eol=lf
+*.tres text eol=lf
+*.godot text eol=lf
+*.go text eol=lf
+*.md text eol=lf
+*.py text eol=lf
+*.rb text eol=lf
+*.sh text eol=lf
+*.command text eol=lf
+*.yml text eol=lf
+bin/* text eol=lf
+*.octa binary
+*.png binary

@@ -24,7 +24,6 @@ import (
 	"runtime"
 	"runtime/debug"
 	"strings"
-	"syscall"
 	"time"
 
 	"godocta/gen/octa"
@@ -92,7 +91,7 @@ func main() {
 			names = append(names, strings.TrimSuffix(filepath.Base(structurePath(arg)), ".octa"))
 		}
 		// A long batch job: lowest CPU priority and a soft memory cap keep the machine usable.
-		syscall.Setpriority(syscall.PRIO_PROCESS, 0, 19)
+		lowerPriority()
 		debug.SetMemoryLimit(int64(*memory) << 30)
 		o := videoOptions{w: w, h: h, fps: *fps, samples: *samples, workers: max(1, *workers), shot: *shot, swap: *swap, left: *left,
 			turn: *turn * math.Pi / 180, theme: *theme}
