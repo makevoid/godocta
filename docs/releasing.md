@@ -15,7 +15,7 @@ hosted jobs before the maintainer has set up a budget.
 | Portability | Replaced a hard-coded macOS test path with an OS temporary path; made `bin/run` POSIX-compatible; routed the macOS launcher through it; isolated the Go preview's Unix priority syscall so Windows compiles |
 | CI | Saved a disabled workflow for Godot 4.4.1/4.7.2 and Go on Linux/macOS/Windows, including Go 1.22; no hosted jobs are enabled |
 | Export | Removed a custom web template path into `.godot/`; standard installed export templates are used; development resources are excluded |
-| Credentials | Pattern scan of the reviewed working tree and all 503 unique blobs in 19 reachable commits found no credential matches; this is not a guarantee against every secret format |
+| Credentials | Pattern scans at review and again before publishing (438 text blobs in 22 reachable commits, 2026-10-26) found no credential matches; this is not a guarantee against every secret format |
 | Repository size | About 107 MiB of structures, 3.4 MiB of artwork, and 45 MiB of local Git history at review; largest historical file about 2.7 MiB; no need to migrate these assets to LFS for this release |
 | Asset provenance | Added an inventory of generated structures, SVG icons, AI artwork, and optional tooling; normalized image sidecar paths |
 | Capture tooling | A failed macOS app launch now fails the wrapper instead of returning success with an empty log |
@@ -26,19 +26,18 @@ is not part of release preparation.
 
 ## Before publishing source
 
-- [ ] Confirm you have redistribution rights for all bundled code and assets,
+- [x] Confirm you have redistribution rights for all bundled code and assets,
   particularly `.agents/skills/sunburst-images/` and the AI-generated UI artwork.
-  Review the applicable generation-account terms and record any required notices
-  in [credits](credits.md). The root license cannot establish third-party ownership.
-- [ ] Review the complete commit history and staged changes you intend to publish.
+  Confirmed by the maintainer on 2026-10-26 and recorded in [credits](credits.md).
+- [x] Review the complete commit history and staged changes you intend to publish.
   Repeat a credential scan if additional commits or refs are included; rotate any
   exposed credential before history cleanup. Git author names/emails and historical
   paths are also visible when publishing history.
-- [ ] Run `python3 tools/check.py` from a fresh checkout or source archive. Confirm
+- [x] Run `python3 tools/check.py` from a fresh checkout or source archive. Confirm
   all 85 builds and `neighbors.octa` are present, without relying on local imports.
-- [ ] Review the current README and controls in the actual desktop app. At minimum,
+- [ ] Review the current README and [controls](controls.md) in the actual desktop app. At minimum,
   exercise opening/saving a file, switching builds, brush/erase, undo/redo, and X-ray.
-- [ ] Enable GitHub private vulnerability reporting so the channel in `SECURITY.md`
+- [x] Enable GitHub private vulnerability reporting so the channel in `SECURITY.md`
   is available. Until then its documented fallback does not disclose vulnerability details.
 - [ ] Set the repository description and topics, choose an initial version/tag,
   and write release notes describing supported platforms and known limitations.

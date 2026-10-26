@@ -1,7 +1,7 @@
 #!/bin/zsh
 # Record the one-minute UI walkthrough without disturbing the desktop: Godot runs hidden
 # (open -j) in the background (open -g) and streams frames to ffmpeg.
-#   tools/walkthrough.sh [--out=captures/walkthrough.mp4] [--fps=30] [--fast=2]
+#   tools/walkthrough.sh [--out=captures/walkthrough.mp4] [--fps=30] [--fast=2] [--stills=DIR]
 # Log: captures/walkthrough.log. Needs ffmpeg (Homebrew).
 cd -- "$(dirname -- "$0")/.."
 APP=${GODOT_APP:-/Applications/Godot.app}

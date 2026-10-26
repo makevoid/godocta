@@ -143,7 +143,16 @@ about a minute.
 ```sh
 tools/walkthrough.sh
 tools/walkthrough.sh --out=captures/tour.mp4 --fast=1   # Loaded builds assemble in real time.
+tools/walkthrough.sh --stills=captures/readme           # Also save clean PNG stills.
 ```
+
+`--stills` saves 1920×1080 PNGs of the studio alone, without the pointer or captions,
+at key moments of the tour (welcome, primitives, brush in, black hole, castle, library,
+Taj Mahal, paint). The README screenshots come from these stills and from
+`tools/capture.sh --views=hero` gallery shots. The README hosts its images and a
+720p cut of the tour (GitHub's limit is 10 MB) as user-attachment uploads made in
+GitHub's file editor, so they are not committed. To replace one, drop the new file
+into the README editor on GitHub and swap the URL.
 
 `tools/walkthrough.gd` hosts the studio in an offscreen `SubViewport` at 2× and pushes
 mouse and key events into it (a root window would read the real OS pointer), so menus,
@@ -233,12 +242,12 @@ native Godot controls, and small SVG icons stay sharp at different display scale
 | Change environment | `WorldTheme`, `StudioEnvironment`, sky/ground shaders | Scene theme wiring, themed hero/side captures |
 | Change data or format | Both codecs/validators, `docs/octa-format.md`, relevant GDScript/Go tests | Both language suites and checked-in generated files |
 | Change brush tools | `OctaEditor`, `StructureTools`, `BrushGizmo`, `ToolPalette`, `ToolOptions`, `OctaPalette`, `brush`/`black_hole` shaders, `OctaStudio` keys | Core editor checks, scene `_test_tools()` and `_test_undo_redo()` (including the 10-stroke limit), hidden GPU capture of the gizmo and history controls |
-| Change controls | `StudioHUD` (readout, assembly line, help card), `StructureToolbar` (bar and settings menu), `ToolOptions`, `StudioTheme`, `OrbitCamera`, `OctaStudio` signal wiring | Scene tests, native input/dialog inspection, README controls |
+| Change controls | `StudioHUD` (readout, assembly line, help card), `StructureToolbar` (bar and settings menu), `ToolOptions`, `StudioTheme`, `OrbitCamera`, `OctaStudio` signal wiring | Scene tests, native input/dialog inspection, [controls](controls.md) |
 
 For a new Go scene, follow the complete example in the [generator guide](../gen/README.md).
 `go test ./...` compiles recipes but does not rewrite `.octa` assets. Regenerate
 affected scenes explicitly at the default density, then run Godot core checks to
-exercise the other language's reader. Update build counts in the README if output
+exercise the other language's reader. Update cell counts in [builds](builds.md) if output
 changes. Use `-out /tmp/octa-builds` for experiments that should not replace assets.
 
 For a new world, match the snake-cased embedded title in `WorldTheme.themes()`;

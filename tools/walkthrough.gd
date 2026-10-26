@@ -5,6 +5,7 @@ extends SceneTree
 ##   --out=captures/walkthrough.mp4   Output video (1920×1080 H.264).
 ##   --fps=30                         Also pass the same value as Godot's --fixed-fps.
 ##   --fast=2                         Assembly speed-up for loaded builds (1 = real time).
+##   --stills=captures/walkthrough    Also save clean 1920×1080 PNGs (no cursor or caption).
 ## The studio runs inside an offscreen SubViewport rendered at 2× and downscaled by
 ## ffmpeg. Scripted mouse and key events are pushed into that viewport (a root window
 ## would read the real OS pointer), and a drawn cursor, click ripples and captions are
@@ -22,6 +23,7 @@ var overlay: WalkthroughOverlay
 var fps: int = 30
 var fast: float = 2.0
 var out_path: String = "res://captures/walkthrough.mp4"
+var stills_dir: String = ""
 var _pointer := Vector2(1340, 900)
 var _pipe: Dictionary = {}
 var _frames: int = 0
@@ -33,6 +35,9 @@ func _initialize() -> void:
 	fps = int(options.get("fps", fps))
 	fast = float(options.get("fast", fast))
 	out_path = options.get("out", out_path)
+	stills_dir = options.get("stills", stills_dir)
+	if stills_dir != "" and not stills_dir.begins_with("res://") and not stills_dir.begins_with("/"):
+		stills_dir = "res://" + stills_dir
 	if not out_path.begins_with("res://") and not out_path.begins_with("/"):
 		out_path = "res://" + out_path
 	# Deliver scripted events immediately, so polled button state matches the events.
@@ -97,6 +102,7 @@ func _welcome() -> void:
 	await _wait(0.5)
 	await _move(_center(studio.hud.welcome.enter_button), 1.2, 60.0)
 	await _wait(0.4)
+	_still("welcome")
 	await _click_until(func() -> bool: return not studio.hud.welcome.visible)
 	overlay.caption("Every build assembles cell by cell")
 	await _wait(0.6)
@@ -111,6 +117,7 @@ func _primitives() -> void:
 	await _wait(0.4)
 	await _move(_popup_item(studio.hud.toolbar.shapes.get_popup(), StructurePresets.Shape.SPHERE), 0.6)
 	await _wait(0.2)
+	_still("primitives")
 	await _click_until(func() -> bool: return studio.renderer.structure.title == "Sphere")
 	_widen()
 	await _wait(0.5)
@@ -137,6 +144,7 @@ func _brush() -> void:
 	await _move(center + Vector2(0.55, -0.35) * r, 1.0, -40.0)
 	await _press()
 	await _move(center + Vector2(0.75, 0.1) * r, 1.2, 20.0)
+	_still("brush-in")
 	await _release()
 	await _wait(1.4) # Strokes commit once idle; the counter in the top bar updates.
 
@@ -150,6 +158,7 @@ func _black_hole() -> void:
 	await _move(center + Vector2(-0.7, 0.25) * r, 1.0, 40.0)
 	await _press()
 	await _move(center + Vector2(0.45, 0.05) * r, 1.6, 30.0)
+	_still("black-hole")
 	await _release()
 	await _wait(1.4)
 
@@ -192,6 +201,7 @@ func _load_castle() -> void:
 	await _move(Vector2(980, 620), 0.8, 40.0)
 	await _drag(Vector2(-300, 20), 3.2)
 	await _wait_assembled(0.4)
+	_still("castle")
 
 func _carve_castle() -> void:
 	overlay.caption("A big black hole takes a bite out of a tower")
@@ -209,14 +219,17 @@ func _carve_castle() -> void:
 	await _move(tower, 1.0, 50.0)
 	await _press()
 	await _move(tower + Vector2(0, 50), 1.1, 10.0)
+	_still("castle-black-hole")
 	await _release()
 	await _wait(1.6)
+	_still("castle-carved")
 
 func _explore() -> void:
 	overlay.caption("Explore the whole collection")
 	await _move(_center(_button(studio.hud.toolbar, "Explore builds")), 1.0, 50.0)
 	await _click_until(func() -> bool: return studio.hud.library.visible)
 	await _wait(0.6)
+	_still("library")
 	await _type("taj")
 	await _wait(0.5)
 	await _move(_center(_button(studio.hud.library, "Taj Mahal")), 0.8, -40.0)
@@ -231,6 +244,7 @@ func _explore() -> void:
 		await _wheel(MOUSE_BUTTON_WHEEL_UP)
 		await _wait(0.2)
 	await _wait_assembled(0.4)
+	_still("taj-mahal")
 
 func _paint_taj() -> void:
 	overlay.caption("Brush in with a color — paint a red dot")
@@ -251,9 +265,11 @@ func _paint_taj() -> void:
 	# Hold still: the brush fills its globe once, leaving a round dot.
 	await _press()
 	await _wait(1.2)
+	_still("paint")
 	await _release()
 	await _move(Vector2(1500, 860), 1.0, 30.0)
 	await _wait(1.6)
+	_still("taj-painted")
 
 func _finish() -> void:
 	overlay.fade(0.0, 1.0, 0.8)
@@ -435,6 +451,17 @@ func _open_encoder(image: Image) -> void:
 	if _pipe.is_empty():
 		push_error("Could not start ffmpeg")
 		quit(1)
+
+## The studio alone, as last drawn: no cursor, ripples or caption.
+func _still(name: String) -> void:
+	if stills_dir == "":
+		return
+	var image := inner.get_texture().get_image()
+	image.resize(SIZE.x, SIZE.y, Image.INTERPOLATE_LANCZOS)
+	var path := ProjectSettings.globalize_path(stills_dir.path_join(name + ".png"))
+	DirAccess.make_dir_recursive_absolute(path.get_base_dir())
+	if image.save_png(path) != OK:
+		push_warning("Could not save still " + path)
 
 # --- Locating controls --------------------------------------------------------------
 

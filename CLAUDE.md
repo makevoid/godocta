@@ -10,7 +10,11 @@ there are no addons, C# assemblies, autoload singletons, or external Go packages
 
 ## Documentation map
 
-- [README.md](README.md): running the app, controls, examples, and current build sizes.
+- [README.md](README.md): presentation, install, and a screenshot tour of the studio. Its images
+  and video are GitHub user-attachment uploads, not repository files.
+- [Controls](docs/controls.md): every control and brushing tips.
+- [Builds](docs/builds.md): the collection with cell counts, and regenerating builds.
+- [How Octa works](docs/concepts.md): the lattice, presets, scripting arrangements, and rendering.
 - [Architecture](docs/architecture.md): every application class, data flow, rendering,
   shader contracts, threading, and world themes.
 - [Development](docs/development.md): setup, tests, capture options, export, and change recipes.

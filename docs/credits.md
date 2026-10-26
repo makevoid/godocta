@@ -12,13 +12,13 @@ Third-party tools retain their own licenses.
 | `assets/*.svg`, `assets/ui/icons/*.svg` | Vector icons stored as editable SVG source in this repository |
 | `assets/ui/splash.png`, `assets/ui/button-chrome.png` | AI-generated using Sunburst on fal.ai; prompts and generation settings are retained in `assets/ui/prompts/` and JSON sidecars |
 | `assets/ui/button-chrome-runtime.png` | Resized derivative of `button-chrome.png` for the nine-slice button skin |
-| `.agents/skills/sunburst-images/` | Bundled optional Ruby artwork tooling and prompt reference material |
+| `.agents/skills/sunburst-images/` | Optional Ruby artwork tooling and prompt reference material, authored by the maintainer (makevoid) |
 
 The artwork is included in the checkout; running Octa does not contact the image
 service. Sidecar image paths are repository-relative. Model output is not guaranteed
-to be reproducible from the same prompt. The maintainer should verify the generation
-account's applicable terms and the provenance of bundled tooling before publishing;
-the sidecars record how the images were produced, not third-party rights clearance.
+to be reproducible from the same prompt. The maintainer confirmed on 2026-10-26 that
+they hold redistribution rights for the AI-generated UI artwork and authored the
+`.agents/skills/sunburst-images/` tooling; both are released under the root license.
 
 ## Runtime and development tools
 
