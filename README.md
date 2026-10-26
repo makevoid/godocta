@@ -1,307 +1,124 @@
+<div align="center">
+
+<img alt="The Octa welcome screen: Small blocks. Infinite worlds." src="https://github.com/user-attachments/assets/4bbbf557-c19a-4cba-822e-2ee44bce2dc2" width="100%" />
+
 # Octa · Structure Studio
 
-Build, paint, and explore structures made from regular truncated octahedrons: 14-faced cells that tile space. Octa is an offline Godot 4 desktop studio with animated assembly, brush and eraser tools, undo/redo, X-ray inspection, and 85 procedural builds.
+**Small blocks. Infinite worlds.**<br>
+Build, paint and explore structures made of truncated octahedrons, the 14-faced cells that tile space.
 
-The **Primitives** menu builds a cube, sphere, square pyramid, or cylinder. **Explore builds** opens landmarks, old towns, ships, machines, and fantasy and natural scenes, mostly between 80,000 and 130,000 cells. Each build assembles from the bottom up in its own sky, ground, or water setting. The standalone Go toolkit in `gen/` creates the checked-in structures.
+[![MIT license](https://img.shields.io/badge/license-MIT-2bd4c4?style=flat-square)](LICENSE)
+[![Godot 4.4+](https://img.shields.io/badge/Godot-4.4%2B-478cbf?style=flat-square&logo=godotengine&logoColor=white)](https://godotengine.org)
+[![Go 1.22+](https://img.shields.io/badge/Go-1.22%2B-00add8?style=flat-square&logo=go&logoColor=white)](gen/README.md)
+[![85 builds](https://img.shields.io/badge/builds-85-e0a040?style=flat-square)](docs/builds.md)
 
-[Contributing](CONTRIBUTING.md) · [MIT license](LICENSE) · [Asset credits](docs/credits.md) · [Release checklist](docs/releasing.md)
+[Quick start](#quick-start) · [Using the studio](#using-the-studio) · [Gallery](#gallery) · [Docs](#documentation)
 
-## Run
+</div>
 
-Clone the repository or download its source archive. The builds and artwork are
-included; there is no asset download, account, or API key needed to run the app.
+## Take the tour
+
+https://github.com/user-attachments/assets/954155b8-4db1-4b37-abe7-11697d8fbf5e
+
+## Highlights
+
+- 🏰 **85 builds**: landmarks, old towns, ships, machines and fantasy worlds, mostly 80,000 to 130,000 cells each. Every build assembles from the bottom up in its own sky, ground or water.
+- 🖌️ **Brush in** new cells in any palette color, or swallow them with a **black hole**.
+- ↩️ **Undo and redo** the last ten strokes.
+- 🔍 **X-ray** view to see inside any build.
+- 💾 A compact **`.octa`** file format: 12 bytes per cell, plus one byte for its color.
+- 📦 **Offline and dependency-free**: no account, no API key, no addons. A standalone Go toolkit generates the builds.
+
+## Quick start
+
+Install [Godot 4.4 or newer](https://godotengine.org/download) (tested with 4.7.2), then:
 
 ```sh
 git clone https://github.com/makevoid/godocta.git
 cd godocta
+bin/run            # or: godot --path .
 ```
 
-Open `project.godot` in Godot 4.4 or newer and press **F5**, or double-click **Launch Octa.command** on macOS. The window is **1900 × 1000 points**, rendered at the display's scale (3800 × 2000 pixels on a 2× Retina/HiDPI screen, with the UI scaled to match), and shrinks to fit smaller displays. The welcome screen offers **Enter the studio**, **Explore builds**, and **Open .octa**. Press **Enter** to start; click **OCTA** in the toolbar to return without losing your arrangement.
+You can also open `project.godot` in Godot and press **F5**. On macOS, double-click **Launch Octa.command**. On Windows, run `godot --path .` from a terminal.
 
-The interface pairs Sunburst artwork with a navy-and-aqua blueprint theme. **Explore builds** searches the entire collection. A floating toolkit sits on the left, selected-tool options appear at bottom right, and the bottom status bar shows navigation hints, FPS, and frame time.
+The builds are already in the repository. You only need Go 1.22+ to [regenerate them](docs/builds.md#regenerating-builds).
 
-```sh
-bin/run                          # or: godot --path .
-bin/run --resolution 1440x900    # extra arguments go to Godot
-```
+## Using the studio
 
-Tested with Godot **4.7.2**. No addons, external packages, or C# runtime are required. Go **1.22+** is needed only to regenerate builds; the viewer uses the checked-in `.octa` files.
+Press **Enter** on the welcome screen to start. The top bar holds the menus and file actions. The toolkit is on the left, and the selected tool's settings appear at the bottom right.
 
-On Windows, open the project in Godot or run `godot --path .` from a terminal;
-the shell launcher is for macOS/Linux. Desktop behavior has been tested locally
-on macOS. Windows/Linux desktop smoke tests and browser validation are still
-release checklist items; the optional web export is a preview.
+### 1. Start from a primitive
+
+Open **Primitives** (or press **1–4**) for a cube, sphere, pyramid or cylinder. Every arrangement assembles cell by cell. Press **R** to replay it.
+
+<img alt="The Primitives menu over a cube" src="https://github.com/user-attachments/assets/b732f233-436d-46c0-8d64-945ab27acec5" width="100%" />
+
+### 2. Brush in and black hole
+
+| **Brush in** · `B` | **Black hole** · `E` |
+| :---: | :---: |
+| <img alt="Brush in adding cells to a sphere" src="https://github.com/user-attachments/assets/3b94af25-6eac-43e2-b8bc-0848df9b194c" /> | <img alt="A black hole carving a sphere" src="https://github.com/user-attachments/assets/6b9fc59b-1c27-46d6-812b-38b8c8bb8593" /> |
+| New cells fly in and snap to the surface under the brush. | Every cell inside the globe is swallowed. |
+
+- **Drag** to paint across the surface. **Hold still** to fill one round spot.
+- Change the size with the **Radius** slider or **[** and **]**, from 0.6 to 12 cells.
+- **Undo** and **Redo** (**Cmd/Ctrl+Z**, **Cmd/Ctrl+Shift+Z**) step through the last ten strokes.
+- **Right drag** orbits without leaving the tool. **Orbit** (**V**) switches back to plain navigation.
+
+### 3. Load a build
+
+Click **Explore builds** and search the collection, or use **Load** to open any `.octa` file. **Save** writes your edited arrangement back out.
+
+| Explore builds | Castle, ready to edit |
+| :---: | :---: |
+| <img alt="The build library" src="https://github.com/user-attachments/assets/16ba1b67-ea83-469a-9a65-9112d500e6db" /> | <img alt="The castle build in its world" src="https://github.com/user-attachments/assets/d0baa2da-e984-4454-942b-89fd8bf7b996" /> |
+
+### 4. Make it yours
+
+| Carve with a big black hole | Paint with a palette color |
+| :---: | :---: |
+| <img alt="A large black hole biting into a castle tower" src="https://github.com/user-attachments/assets/decf9ea6-a5ea-4e1e-96e8-be5b39cc1a0f" /> | <img alt="Brushing a red dot onto the Taj Mahal dome" src="https://github.com/user-attachments/assets/25c64140-c006-422a-a4fe-8c7a1184c2a9" /> |
+
+Brush in uses **Auto** by default, so new cells copy the color of the cells they grow from. On a colored build, you can pick one of eight swatches, or click **More** to see all 16.
+
+### Navigate
+
+| Input | Action |
+| --- | --- |
+| Drag · right drag with a tool | Orbit |
+| Wheel / pinch | Zoom |
+| Shift + drag / middle drag | Pan |
+| **F** | Reframe the build |
+| **X** | X-ray view |
+| **?** / **H** | Help card with every control |
+
+[All controls →](docs/controls.md)
+
+## Gallery
+
+<img alt="Nine Octa builds: Eiffel Tower, Neuschwanstein, Golden Gate Bridge, Pirate Galleon, Floating Islands, Sydney Opera House, Saturn V Launch, Venice Grand Canal and Japanese Castle" src="https://github.com/user-attachments/assets/336b0e28-f52c-4106-8579-efc44a1a6c5f" width="100%" />
+
+<sub>Eiffel Tower · Neuschwanstein · Golden Gate Bridge · Pirate Galleon · Floating Islands · Sydney Opera House · Saturn V Launch · Venice Grand Canal · Japanese Castle. [See all 85 →](docs/builds.md)</sub>
 
 ## Documentation
 
 | Guide | Contents |
 | --- | --- |
-| [Architecture and classes](docs/architecture.md) | Repository map, all 24 GDScript classes, data flow, rendering, workers, shaders and worlds |
-| [Development workflow](docs/development.md) | Setup, tests, capture/benchmark options, export and extension recipes |
-| [Go generator](gen/README.md) | CLI, density, geometry/grid APIs, component catalog and adding scenes |
-| [OCTA format](docs/octa-format.md) | Binary layouts, validation and cross-language compatibility |
-| [Contributing](CONTRIBUTING.md) | Setup, checks, and pull request expectations |
-| [Release checklist](docs/releasing.md) | Readiness findings, disabled CI template, and publication steps |
-| [Assets and dependencies](docs/credits.md) | Artwork provenance and distribution notices |
-| [Agent guidance](CLAUDE.md) | Shared project instructions; `AGENTS.md` links to this file |
+| [Controls](docs/controls.md) | Every mouse, toolbar and keyboard control, plus brushing tips |
+| [Builds](docs/builds.md) | The full collection with cell counts, and regenerating builds in Go |
+| [How Octa works](docs/concepts.md) | The cell lattice, presets, scripting your own arrangements, and rendering |
+| [Architecture](docs/architecture.md) | Every GDScript class, data flow, shaders, workers and worlds |
+| [Development](docs/development.md) | Tests, screenshots, the walkthrough video, web export and change recipes |
+| [Go generator](gen/README.md) | CLI, density, geometry and grid APIs, components, and adding scenes |
+| [OCTA format](docs/octa-format.md) | Binary layouts and cross-language compatibility |
+| [Credits](docs/credits.md) | Artwork provenance and distribution notices |
 
-## Controls
+## Contributing
 
-| Control | Action |
-| --- | --- |
-| Enter (welcome screen) / OCTA (toolbar) | Enter the studio / return to the welcome screen, keeping the current arrangement |
-| Explore builds | Search by name; select a card to load it; **Esc** closes the collection |
-| Builds ▾, or **5–9** | Open a `.octa` file from `structures/`; shortcuts select the first five alphabetically |
-| Primitives ▾, or **1–4** | Assemble the cube, sphere, square pyramid or cylinder |
-| Replay, **R**, or **Space** | Restart the current arrangement |
-| Drag | Orbit |
-| Wheel / pinch | Zoom |
-| Shift + drag / middle drag | Pan |
-| Frame / **F** | Restore framing |
-| **?** / **H** | The help card: every control plus the unit diagram |
-| Settings ▾ | X-ray view (**X**), auto orbit, and enabling the scoop tool |
-| Save / Load | Write or open a compact `.octa` arrangement |
-| Orbit / **V** or **Esc** | Navigation only: left drag orbits |
-| Brush in / **B** | Paint cells in: new cells fly in and snap to the cells under the brush (or rest on the ground) and take the brush color. A stroke keeps the brush at the depth of its first hit, so it fills that globe and stops; drag to paint sideways, and when the globe is full the gizmo greys out and a toast asks for another click |
-| Black hole / **E** | Swallow cells within a globe fixed at the first hit's depth for the stroke; hold or drag to clear that foreground area, then release and click again to target deeper cells |
-| Undo / **Cmd/Ctrl+Z** | Undo the last brush, black-hole or scoop stroke; keeps up to **10 strokes**, including the latest pending edit |
-| Redo / **Cmd/Ctrl+Shift+Z** or **Ctrl+Y** | Restore an undone stroke. A new edit clears redo; switching builds clears all history |
-| Scoop / **S** | A half globe that shaves the surface about one layer deep; its cut plane is fixed per stroke so dragging planes the build. Enable it in Settings first |
-| **←/→**, **↑/↓** | Tilt the scoop 45° around the screen X / Y axes (flat by default) |
-| **[** / **]** or Brush size | Shrink / grow the brush (0.6–12 cells). Brush in and the black hole start at 3 cells, the scoop at 2, and each tool keeps the last size it was used at |
-| Brush color | Auto (new cells copy the cells they grow from) or one of the build's palette colors: eight swatches, with More for all 16. Uncolored presets stay on auto |
-| Right drag, or Alt + drag | Orbit while a tool is active |
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md), and run `python3 tools/check.py` before opening a pull request. Report bugs in [issues](https://github.com/makevoid/godocta/issues), and report vulnerabilities as described in [SECURITY.md](SECURITY.md).
 
-## The cell is the unit of data
+The desktop app has been tested on macOS. Windows and Linux are untested, and the web export is an experimental preview.
 
-An `OctaStructure` contains a `PackedInt32Array` of `(x, y, z)` triples, a title, and a cell span. Coordinates occupy **12 bytes per cell**. Colored structures add a palette of up to 16 colors and **one palette-index byte per cell** (`set_colors()`, `color_index()`). Meshes, scene nodes, transforms and animation state are not stored per cell in the structure.
+## License
 
-Truncated octahedrons tile on a **body-centered cubic lattice**. Coordinate triples must be **all even or all odd**, including negative coordinates. Their world-space centers are:
-
-```text
-world_position = Vector3(x, y, z) * cell_span / 2
-```
-
-For `cell_span = 1`, the unit has vertices at the permutations of `(0, ±1, ±2) / 4`. Its axis-aligned span is one unit, its volume is 0.5, and its edge length is `sqrt(2) / 4`. `OctaLattice.NEIGHBORS` provides all 14 face-sharing offsets: six axial `(±2, 0, 0)` permutations and eight diagonal `(±1, ±1, ±1)` combinations.
-
-**The cube's dimension of 10 means a 10 × 10 × 10 world-unit envelope**, measured with zero visual separation. Its lattice contains `10³ + 9³ = 1,729` truncated octahedrons, using 20,748 bytes of coordinates. The sphere and cylinder keep a cell when more than half of its volume lies inside the shape, so silhouettes are symmetric and free of single-cell spurs. The pyramid steps in by half a cell per course, the lattice's natural 45° slope. Boundaries are cellular approximations, not clipped meshes.
-
-| Preset | Cells | Coordinate bytes | Cell envelope |
-| --- | ---: | ---: | --- |
-| Cube | 1,729 | 20,748 | 10 × 10 × 10 |
-| Sphere | 1,037 | 12,444 | 10 × 10 × 10 |
-| Pyramid | 385 | 4,620 | 10 × 5.5 × 10 |
-| Cylinder | 1,421 | 17,052 | 10 × 10 × 10 |
-
-## Generating builds in Go
-
-`gen/` is a standalone Go module (Godot ignores it via `.gdignore`) that compiles scenes into `.octa` files:
-
-```sh
-cd gen
-go vet -composites=false ./...
-go test ./...
-go run ./cmd/octagen            # all scenes → ../structures/*.octa
-go run ./cmd/octagen -list      # list registered scenes
-go run ./cmd/octagen castle     # one scene
-go run ./cmd/octagen -out /tmp/octa-builds -density 8 # 2× span-1 resolution (≈4× default cells)
-```
-
-`-density` multiplies cell density relative to span 1: `span = cbrt(1 / density)`. The default 2 gives cells ∛½ ≈ 0.79 units across. Since a span-1 cell has volume 0.5, bulk density is `2 × density` cells per cubic world unit. Scenes are authored in fixed world units; resolution changes boundary detail and may slightly shift the cell envelope. Put CLI flags before scene names. See the [generator guide](gen/README.md) for sampling rules and examples.
-
-| Build | Cells | Assembly |
-| --- | ---: | ---: |
-| Aircraft Carrier | 101,583 | 15.6 s |
-| Alhambra | 86,775 | 14.8 s |
-| Amsterdam Canals | 95,145 | 15.2 s |
-| Angkor Wat | 97,939 | 15.4 s |
-| Arc de Triomphe | 116,543 | 16.3 s |
-| Arena | 151,483 | 17.8 s |
-| Battleship | 112,060 | 16.1 s |
-| Big Ben | 104,561 | 15.7 s |
-| Blue Mosque | 87,952 | 14.8 s |
-| Borobudur | 88,365 | 14.8 s |
-| Caravanserai | 96,852 | 15.3 s |
-| Castle | 138,426 | 17.2 s |
-| Chichen Itza | 105,847 | 15.8 s |
-| Christ the Redeemer | 92,741 | 15.1 s |
-| Cinque Terre | 103,537 | 15.6 s |
-| Cliff Palace | 113,865 | 16.2 s |
-| Clipper Ship | 102,269 | 15.6 s |
-| Colosseum Ruins | 117,816 | 16.3 s |
-| Cruise Ship | 66,663 | 13.5 s |
-| Dinosaur Valley | 84,083 | 14.6 s |
-| Dubrovnik | 100,370 | 15.5 s |
-| Easter Island | 97,951 | 15.4 s |
-| Eiffel Tower | 97,915 | 15.4 s |
-| Eilean Donan | 98,989 | 15.4 s |
-| Floating Islands | 96,048 | 15.3 s |
-| Forbidden City | 114,708 | 16.2 s |
-| Funfair | 91,161 | 15.0 s |
-| Giza Pyramids | 114,019 | 16.2 s |
-| Golden Gate Bridge | 118,438 | 16.4 s |
-| Golden Pavilion | 84,606 | 14.6 s |
-| Gothic Cathedral | 120,276 | 16.5 s |
-| Great Wall | 101,107 | 15.5 s |
-| Hagia Sophia | 107,963 | 15.9 s |
-| Haunted Manor | 103,613 | 15.7 s |
-| Hillside Burrows | 85,147 | 14.7 s |
-| Ice Palace | 91,300 | 15.0 s |
-| Ishtar Gate | 100,895 | 15.5 s |
-| Itsukushima | 88,608 | 14.9 s |
-| Japanese Castle | 117,059 | 16.3 s |
-| Karnak Temple | 99,805 | 15.5 s |
-| Kinderdijk | 99,464 | 15.4 s |
-| Kremlin | 92,407 | 15.1 s |
-| Lalibela | 120,149 | 16.4 s |
-| Landwasser Viaduct | 92,992 | 15.1 s |
-| Lighthouse Cove | 91,927 | 15.0 s |
-| Lunar Landing | 99,214 | 15.4 s |
-| Machu Picchu | 90,608 | 15.0 s |
-| Manhattan | 98,511 | 15.4 s |
-| Mars Base | 85,704 | 14.7 s |
-| Medieval Tower | 34,374 | 10.8 s |
-| Meteora | 94,494 | 15.2 s |
-| Mont Saint Michel | 82,154 | 14.5 s |
-| Monument Valley | 89,188 | 14.9 s |
-| Neon City | 101,858 | 15.6 s |
-| Neuschwanstein | 117,010 | 16.3 s |
-| Oil Rig | 82,523 | 14.5 s |
-| Parthenon | 100,193 | 15.5 s |
-| Petra Treasury | 85,026 | 14.7 s |
-| Piazza Dei Miracoli | 103,854 | 15.7 s |
-| Pirate Galleon | 95,126 | 15.2 s |
-| Pont Du Gard | 107,488 | 15.8 s |
-| Potala Palace | 115,374 | 16.2 s |
-| Prague Old Town | 114,676 | 16.2 s |
-| Rothenburg | 96,038 | 15.3 s |
-| Sagrada Familia | 114,691 | 16.2 s |
-| Santorini | 102,652 | 15.6 s |
-| Saturn V Launch | 114,041 | 16.2 s |
-| Shwedagon Pagoda | 98,362 | 15.4 s |
-| Siege Camp | 111,634 | 16.0 s |
-| St Basils Cathedral | 118,927 | 16.4 s |
-| Statue of Liberty | 108,124 | 15.9 s |
-| Stave Church | 94,150 | 15.2 s |
-| Steam Train | 82,006 | 14.5 s |
-| Steampunk Airship | 87,246 | 14.8 s |
-| Sydney Opera House | 97,090 | 15.3 s |
-| Taj Mahal | 113,335 | 16.1 s |
-| Temple Of Heaven | 101,746 | 15.6 s |
-| Tigers Nest | 106,066 | 15.8 s |
-| Tower Bridge | 105,340 | 15.7 s |
-| Treehouse Village | 113,319 | 16.1 s |
-| Venice Grand Canal | 91,760 | 15.0 s |
-| Viking Harbor | 115,269 | 16.2 s |
-| Volcano Island | 90,426 | 15.0 s |
-| Wild West Town | 117,889 | 16.3 s |
-| Wizard Academy | 115,628 | 16.2 s |
-
-The table describes the checked-in builds at default density; the [generator guide](gen/README.md#registered-scenes) describes each one. `go run ./cmd/octapreview <name>` (from `gen/`) renders a quick headless preview sheet of a build to `captures/preview/`. The toolkit has three layers:
-
-- **`octa`**: lattice math, `Solid` primitives (cuboid, cylinder, frustum/cone, ellipsoid, prism, gable and hip roofs, arch, capsule, arbitrary `Func`) with CSG (`Union`, `Subtract`, `Intersect`, `Translate`, `RotateY`, `Sheared`), a `Grid` of colored cells, assembly `Order`s (`Sweep`, `Along`, `Outward`; layers always rise bottom-up) and the OCTA reader/writer.
-- **`kit`**: reusable components with plain-struct configuration: battlements, walls, towers, turrets, keep, hall, gatehouse, moat, setback buildings with window bands and crowns, a twisting tower, a wedge, trees and a suspension bridge.
-- **`scenes`**: registered compositions. Add a type with `Name`, `Title` and `Build(g *Grid) Order`, call `Register` in `init`, and `octagen` picks it up.
-
-Colors come from a fixed 16-color palette (`octa.Palette`). `grid.Use(color)` sets the brush for subsequent fills, `grid.With(color, fn)` scopes it, and `grid.Paint(color, solids...)` recolors existing cells. Zero-valued accent fields such as `RoofColor` select a component's default; zero-valued building `Windows` fields disable glazing.
-
-```go
-g := octa.NewGrid()
-g.Use(octa.Grass).Fill(octa.Block(octa.V(-12, 0, -12), octa.V(12, 1, 12)))
-g.Use(octa.Stone).Build(kit.Tower{Center: octa.P(0, 0), Radius: 5, Base: 1, Top: 20, Roof: kit.RoofCone})
-structure, err := g.Structure("Tower", octa.Sweep(octa.P(0, 0), 0))
-```
-
-### Specify your own arrangement
-
-Use packed triples directly for generated/imported data:
-
-```gdscript
-var arrangement := OctaStructure.from_cells(
-    PackedInt32Array([
-        0, 0, 0,
-        2, 0, 0,  # Square-face neighbor.
-        1, 1, 1,  # Hexagonal-face neighbor.
-    ]),
-    "Three connected cells",
-    1.0
-)
-renderer.display(arrangement)  # Four-second assembly.
-```
-
-Or use the mutable authoring helper, which checks occupancy:
-
-```gdscript
-var builder := OctaStructureBuilder.new()
-builder.add(Vector3i.ZERO)
-for offset in OctaLattice.NEIGHBORS:
-    builder.add(offset)
-var arrangement := builder.build("Central cell and its 14 neighbors")
-
-var files := OctaFile.new()
-files.save_structure("user://neighbors.octa", arrangement)
-var restored := files.load_structure("user://neighbors.octa")
-renderer.display(restored)
-```
-
-Invalid parity, duplicate cells, invalid spans, and malformed payloads are rejected. `from_cells()` returns `null` for invalid input; `OctaStructure.validation_error()` explains why. `OctaFile.last_error` explains save/load failures. Discard the builder after compiling an arrangement to release its temporary occupancy dictionary; `build()` itself does not clear it. Finish metadata and color edits before display, and treat displayed structures as read-only while the renderer's worker uses them. A structure can contain up to 1,000,000 cells. This cap bounds accepted data; it is not a performance guarantee on every GPU.
-
-### Rendering and animation
-
-`StructureRenderer` uploads one derived buffer to a `MultiMesh`, sharing one indexed 44-triangle mesh (72 vertices). There is **one render node per arrangement**. Each instance has 12 transform floats and 4 custom floats (rank, seed, height, palette index; 64 bytes); Godot and the GPU also require their own resource/storage overhead. The 12-byte figure describes the compact coordinate payload, not total process memory.
-
-A single material uniform advances the animation clock. `AssemblyTimeline.duration_for(cells)` is `clamp(4 × ∛(cells / 1729), 4, 24)` seconds. Instance rank determines its release time over the release window; each cell settles using cubic ease-out over about 1.2 seconds (slightly longer for big builds), and the last cell settles exactly at the end. Big builds drop cells from proportionally higher so the motion stays visible. Completed assemblies stop requesting per-frame render updates. Switching shapes replaces the arrangement and resets that clock; replay reuses the current buffer.
-
-A background task starts when a structure is displayed and finds cells whose 14 neighbors are all occupied. Once an assembly settles in solid view with cell separation at or below 0.1 — zero in the app, so cells tile face to face — the renderer uses the resulting surface buffer when ready. Assembly, X-ray and wider separation draw every cell. The full dataset remains available for saving and replay.
-
-`WorldTheme` defines each world (sky colors, sun, clouds, horizon silhouette, ground or water, light and ambient). The generated worlds share warm late-afternoon lighting with per-world overrides. `StudioEnvironment.apply_theme()` switches them; file titles select themes through snake case, unknown titles fall back to studio, and presets always use the dark studio. The sky is a static procedural shader (`shaders/sky.gdshader`) without a time dependency, so it does not animate its radiance every frame.
-
-The solid and X-ray materials share `shaders/cell_common.gdshaderinc`. The X-ray material is additive and unshaded with no depth writes, so interiors show through; lines and vertex dots fade with screen-space density so distant views don't saturate.
-
-Brush edits are pending while you paint: swallowed cells are hidden in the full buffer and new cells are drawn by an overlay. About a second after a stroke (or before another stroke, switching tools, Save or Replay), `OctaEditor.build()` compacts them into a new structure that replaces the old one in place, without recentering or replaying. Survivors keep their assembly order and added cells follow. Undo/Redo keeps the last 10 strokes and restores exact coordinates, order and colors without moving the view. Switching builds discards pending edits and history.
-
-Geometry, storage, rendering, presets, UI, and camera are separate `class_name` classes under `scripts/`. The entry scene is `scenes/main.tscn`; `OctaStudio` connects their signals. Cell separation and display recentering do not change the saved coordinates.
-
-For much larger worlds, partition structures into spatial chunks with one `MultiMesh` per chunk. A single `MultiMesh` is culled as a unit. The current implementation uses one render node for each displayed build. See the [architecture reference](docs/architecture.md) for buffer layout, shader contracts and worker lifecycle.
-
-## File format and checks
-
-[OCTA format](docs/octa-format.md) describes the small, versioned, little-endian binary format: v1 holds coordinates, v2 adds a palette and per-cell colors. Save/Load and the Go toolkit both implement it.
-
-```sh
-godot --headless --path . --editor --import --quit
-godot --headless --path . --script tests/test_core.gd
-godot --headless --path . --script tests/test_scene.gd
-```
-
-Core checks cover topology, all 14 shared faces, mesh volume/winding, lattice validation, preset symmetry and membership, size-scaled timing/easing, v1 and v2 file round trips, corrupt files, and the generated builds. Scene checks exercise toolbar, menu and gallery wiring, replay/interruption, render buffers, palette upload, X-ray toggling, the brush color grid, the opt-in scoop, camera framing, and empty arrangements.
-
-### Screenshots in the background
-
-`tools/capture.sh` renders real GPU screenshots without taking focus: on macOS it launches Godot hidden via `open -g -j` and writes PNGs to `captures/`. (`--headless` uses a dummy renderer that can't produce images.)
-
-```sh
-tools/capture.sh                                   # all presets/gallery files; hero, front, top
-tools/capture.sh --shapes=castle,cube --views=hero,front,side,top
-tools/capture.sh --shapes=castle --modes=solid,xray
-tools/capture.sh --shapes=arena --at=0.25,0.5,0.75 # mid-assembly frames
-tools/capture.sh --shapes=castle,arena --views= --bench # ms per settled frame
-```
-
-Hidden windows are throttled, so the live FPS readout is meaningless there; `--bench` instead times forced draws with a GPU readback (a slight overestimate).
-
-Set `GODOT_APP` if Godot isn't at `/Applications/Godot.app`. The log is in `captures/capture.log`. See [development](docs/development.md) for every option, filename rules and benchmark limits.
-
-An optional Web Preview export preset is included. Install the official export templates matching your Godot version through **Editor → Manage Export Templates**, create `preview/`, then run `godot --headless --path . --export-debug "Web Preview" preview/index.html`. Serve the output over local HTTP as described in [development](docs/development.md). `preview/` is generated and ignored. Use the native project for local filesystem Save/Load.
-
-## Contributing and license
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow. Run
-`python3 tools/check.py` to check both toolchains (Python 3.9+; use `python` on
-Windows). GitHub Actions is intentionally disabled; a workflow template is kept
-for later activation. Report bugs through [GitHub issues](https://github.com/makevoid/godocta/issues)
-and vulnerabilities through the process in [SECURITY.md](SECURITY.md).
-
-Octa is distributed under the [MIT license](LICENSE). See
-[asset and dependency credits](docs/credits.md) for artwork provenance and notices
-to include when distributing exported apps.
+[MIT](LICENSE) © makevoid and Octa contributors.
