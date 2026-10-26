@@ -16,6 +16,9 @@ there are no addons, C# assemblies, autoload singletons, or external Go packages
 - [Development](docs/development.md): setup, tests, capture options, export, and change recipes.
 - [Generator](gen/README.md): CLI, density, Go types, components, and adding scenes.
 - [OCTA format](docs/octa-format.md): binary layouts and interoperability constraints.
+- [Contributing](CONTRIBUTING.md): contributor setup and review expectations.
+- [Release checklist](docs/releasing.md): release findings, verification, and disabled CI.
+- [Credits](docs/credits.md): asset provenance and dependency notices.
 
 Read the relevant implementation when making a change; these docs describe the
 current design, not a substitute API specification for Godot or Go.
@@ -27,6 +30,7 @@ Run from the repository root unless stated otherwise. The project declares Godot
 
 ```sh
 bin/run        # launches the app (foreground window): ask the user to run it
+python3 tools/check.py  # import + Godot suites + Go format/vet/tests (Python 3.9+)
 
 # Refresh imports/global class registration, especially after adding or renaming scripts.
 godot --headless --path . --editor --import --quit
@@ -52,8 +56,10 @@ positional structs from `octa`. Godot tests are standalone `SceneTree` scripts w
 explicit test calls, not an automatically discovered test framework. They have no
 test filter. Success markers are `Core checks: N passed, 0 failed.` and
 `Scene integration: PASS`; also inspect output for `SCRIPT ERROR` and parse errors.
-The core test uses `/private/tmp/godocta-roundtrip.octa`, so do not run multiple
-copies concurrently.
+The core test uses a process-specific file in `OS.get_temp_dir()` and removes it.
+Run imports and suites sequentially within a checkout. GitHub Actions is intentionally
+disabled: `.github/workflows/ci.yml.disabled` is a template, not an active workflow.
+Do not enable it unless the user requests this.
 
 Never use `--headless` for images: it uses a dummy renderer. Preserve the user's
 preference that captures do not bring the app to the foreground. The macOS wrapper

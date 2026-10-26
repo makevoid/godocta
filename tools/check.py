@@ -9,6 +9,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import tempfile
 
 ROOT = Path(__file__).resolve().parent.parent
 GODOT_ERROR = re.compile(r"SCRIPT ERROR:|Parse Error:|^ERROR:", re.MULTILINE)
@@ -42,12 +43,14 @@ def check_godot(executable):
     if not executable:
         raise RuntimeError("Godot not found; put godot on PATH or pass --godot /path/to/Godot")
     run([executable, "--version"])
-    base = [executable, "--headless", "--path", str(ROOT)]
-    run(base + ["--editor", "--import", "--quit"], godot=True)
-    run(base + ["--script", "tests/test_core.gd"], godot=True,
-        marker=r"^Core checks: [1-9][0-9]* passed, 0 failed\.$")
-    run(base + ["--script", "tests/test_scene.gd"], godot=True,
-        marker=r"^Scene integration: PASS$")
+    with tempfile.TemporaryDirectory(prefix="octa-check-") as log_dir:
+        base = [executable, "--headless", "--path", str(ROOT),
+                "--log-file", str(Path(log_dir) / "godot.log")]
+        run(base + ["--editor", "--import", "--quit"], godot=True)
+        run(base + ["--script", "tests/test_core.gd"], godot=True,
+            marker=r"^Core checks: [1-9][0-9]* passed, 0 failed\.$")
+        run(base + ["--script", "tests/test_scene.gd"], godot=True,
+            marker=r"^Scene integration: PASS$")
 
 
 def check_go():

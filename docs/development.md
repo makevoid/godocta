@@ -18,9 +18,10 @@ godot --path .
 ```
 
 Alternatively open `project.godot` in the editor and press F5. On macOS,
-`Launch Octa.command` first uses `godot` on PATH, then
-`/Applications/Godot.app/Contents/MacOS/Godot`. It changes into the project directory
-before launching. The native window is 1900×1000 points × the display scale (3800×2000 px at 2×), minimum 1100×720, and
+`Launch Octa.command` delegates to `bin/run`, which first uses `godot` on PATH,
+then `$GODOT_APP/Contents/MacOS/Godot` (default `/Applications/Godot.app`). The
+launcher uses POSIX sh, works on Linux with Godot on PATH, and imports resources
+on first launch. On Windows, use the editor or `godot --path .`. The native window is 1900×1000 points × the display scale (3800×2000 px at 2×), minimum 1100×720, and
 shrinks to fit the display unless an explicit `--resolution` is supplied.
 
 After adding or renaming scripts/classes, re-run the import command before
@@ -29,6 +30,20 @@ and SVG `.import` metadata with their resources. `.godot/` is an ignored cache;
 `gen/.gdignore` prevents importing the Go module.
 
 ## Validation
+
+With Python 3.9+, `python3 tools/check.py` runs import, both Godot suites, Go
+formatting checks, vet, and tests. Use `--only godot` or `--only go` for one
+toolchain and `--godot /path/to/Godot` for a custom executable. On Windows use
+`python`. A missing success summary, engine/script error, timeout, or nonzero
+exit fails the command. Logs use a temporary directory. The commands below can
+also be run separately.
+
+GitHub Actions is **disabled**. The prepared workflow at
+`.github/workflows/ci.yml.disabled` is not discovered by GitHub. It defines Linux
+checks with Godot 4.4.1 and 4.7.2, plus Go checks on Linux/macOS/Windows and the
+minimum Go 1.22 toolchain. It uses read-only permissions, pinned actions, and
+official Godot archives verified against their release checksums. See
+[releasing](releasing.md#enabling-ci-later) before activating it.
 
 ```sh
 # Repository root; execute after import finishes.
@@ -41,7 +56,7 @@ godot --headless --path . --script tests/test_scene.gd
 
 | Check | Coverage / expected result |
 | --- | --- |
-| [test_core.gd](../tests/test_core.gd) | Mesh topology/winding/volume, 14 shared faces, lattice/builder validation, deterministic presets and symmetry, timing, v1/v2 round trips and corrupt payloads, all five checked-in generated builds; prints `Core checks: N passed, 0 failed.` |
+| [test_core.gd](../tests/test_core.gd) | Mesh topology/winding/volume, 14 shared faces, lattice/builder validation, deterministic presets and symmetry, timing, v1/v2 round trips and corrupt payloads, all 85 checked-in generated builds; prints `Core checks: N passed, 0 failed.` |
 | [test_scene.gd](../tests/test_scene.gd) | Instantiates the actual scene, checks welcome/collection actions, search and overlay input isolation, selects presets via buttons, waits for assembly, checks buffers and surface reduction, rapid switching/replay, palette/X-ray, gallery/theme selection, camera and empty data; prints `Scene integration: PASS` |
 | [octa/structure_test.go](../gen/octa/structure_test.go) | Colored binary round trip, uncolored v1 output, invalid colors, truncated payload |
 | [scenes/scenes_test.go](../gen/scenes/scenes_test.go) | Compiles each registered scene at default density; validates count, bottom-up ordering and ≥3 colors |
@@ -49,8 +64,9 @@ godot --headless --path . --script tests/test_scene.gd
 
 The Godot scripts return nonzero on failed checks. Also inspect `SCRIPT ERROR` and
 parse-error output: a failed dependency can invalidate a script before its summary.
-Core tests use the fixed `/private/tmp/godocta-roundtrip.octa` path and remove it;
-run one copy at a time. Scene tests wait through four real-time assemblies (roughly
+Core tests use a process-specific file under `OS.get_temp_dir()` and remove it;
+they work across desktop platforms without a macOS-specific path. Run imports
+and suites sequentially within a checkout. Scene tests wait through four real-time assemblies (roughly
 16 seconds plus setup). There is no Godot test-filter argument; the explicit calls
 in `_initialize()`/`_run()` define coverage. Go supports focused checks:
 
@@ -107,7 +123,7 @@ theme's sky and ground:
 
 `-shot`, `-turn`, `-swap`, `-left`, `-fps` and `-samples` (minimum sub-frames per frame;
 fast orbits take more) tune it.
-Video renders run at the lowest CPU priority on half the cores (`-workers`) under a soft
+Video renders lower CPU priority on macOS/Linux and run on half the cores (`-workers`) under a soft
 memory cap (`-mem`, GiB), and load each build only around its shot, so a 30-build
 showcase takes about an hour in under 1 GB without blocking the machine. Each shot is
 encoded to `<output>.parts/` first: after an interruption, rerun the same command to
@@ -149,7 +165,7 @@ PNG names are `<shape>-<view>[-xray].png` and
 `<shape>-build-<percent>[-xray].png`. Existing names are overwritten. The log always
 stays at `captures/capture.log` even with a custom `--out`; it is reset per run.
 The wrapper prints Showing/Captured/Bench/error/warning lines and reports failure
-if its log contains `ERROR`. Unknown views are warnings and are skipped; unknown
+if launching Godot fails or its log contains `ERROR`. Unknown views are warnings and are skipped; unknown
 structures are errors. Check requested PNGs as well as exit status.
 
 Hidden windows throttle ordinary frames, so HUD FPS is unsuitable for benchmarks.
@@ -162,7 +178,7 @@ the same resolution, mode, gap, and hardware. This is not a pure GPU timer.
 
 The checked-in splash and button frame were generated with the project-local
 [sunburst-images skill](../.agents/skills/sunburst-images/SKILL.md). Runtime use
-requires only Godot; Ruby, `excon`, and a fal.ai credential are needed only when
+requires only Godot; Ruby, `excon` (`gem install excon`), and a fal.ai credential are needed only when
 regenerating artwork:
 
 ```sh
@@ -170,8 +186,12 @@ ruby tools/generate_ui_art.rb
 godot --headless --path . --editor --import --quit
 ```
 
-This submits two image requests. Edit `assets/ui/prompts/*.txt` first; the exact
+This submits two paid image requests. Set `FAL_KEY` in your environment or use the
+home-directory credential files documented by the optional tooling; never commit
+credentials. Edit `assets/ui/prompts/*.txt` first; the exact
 prompt, settings and request ID are also retained in the generated JSON sidecars.
+The regeneration script makes sidecar image paths repository-relative. See
+[credits](credits.md) for the asset provenance inventory.
 On macOS the script uses `sips` to resize the button master to the 192×64 runtime
 skin; other platforms need that resize separately. Keep the ten-pixel nine-slice
 corners intact when changing `StudioTheme.chrome()`. Button labels and states are
@@ -204,9 +224,10 @@ and its target shader. Unknown titles continue to use studio lighting.
 
 ## Optional Web Preview export
 
-`export_presets.cfg` includes a Web Preview preset with thread support disabled.
-Place the matching Godot version's `web_nothreads_debug.zip` template at
-`.godot/web_nothreads_debug.zip`, then run:
+`export_presets.cfg` includes an experimental Web Preview preset with thread support
+disabled. Install the official export templates matching your engine version using
+**Editor → Manage Export Templates**. The preset uses the standard installed
+templates, with no local custom-template path. Then run:
 
 ```sh
 mkdir -p preview
@@ -215,7 +236,8 @@ python3 -m http.server 8000 --directory preview
 ```
 
 Open `http://localhost:8000` while the local server is running. The export includes
-`structures/*.octa` and excludes tests/docs/captures/preview. The template and
+`structures/*.octa` and excludes development tools, tests, docs, captures, export
+output, artwork prompts/sidecars, and the unused button master. The templates and
 `preview/` output are ignored; do not commit them. Use the native application for
 local filesystem Save/Load. Native headless tests do not establish browser behavior;
 check an exported preview separately when changing web support.

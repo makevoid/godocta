@@ -31,6 +31,8 @@ On Windows use `python` instead of `python3`. Set `GODOT` or pass
 resources first, requires both Godot success summaries, rejects engine/script
 errors, and runs Go formatting checks, vet, and tests. It does not regenerate assets.
 Individual commands remain documented in [development](docs/development.md#validation).
+GitHub Actions and automated dependency updates are intentionally disabled; local
+checks are the verification path until the maintainer enables the saved templates.
 
 For UI/rendering changes, also inspect real GPU captures. Headless Godot uses a
 dummy renderer. On macOS, `tools/capture.sh` captures without taking focus.

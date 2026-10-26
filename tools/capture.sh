@@ -13,6 +13,6 @@ LOG=${CAPTURE_LOG:-captures/capture.log}
 mkdir -p captures "${LOG:h}"
 : > "$LOG"
 open -g -j -n -W -a "$APP" --stdout "$LOG" --stderr "$LOG" \
-  --args --path "$PWD" --resolution 1900x1000 --position 4000,4000 --script tools/capture.gd -- "$@"
+  --args --path "$PWD" --resolution 1900x1000 --position 4000,4000 --script tools/capture.gd -- "$@" || exit $?
 grep -E "Showing|Captured|Bench|ERROR|WARNING" "$LOG"
 ! grep -q "ERROR" "$LOG"
