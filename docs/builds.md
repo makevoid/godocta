@@ -12,6 +12,17 @@ each scene is composed.
 
 ## Collection
 
+All 100 builds in alphabetical order, with 25 per collage. Click an image to see
+the full-resolution PNG.
+
+[![Builds 1–25: Aircraft Carrier through Dragon Rock](images/builds/collection-01.png)](images/builds/collection-01.png)
+
+[![Builds 26–50: Dubrovnik through Kremlin](images/builds/collection-02.png)](images/builds/collection-02.png)
+
+[![Builds 51–75: Lalibela through Radio Observatory](images/builds/collection-03.png)](images/builds/collection-03.png)
+
+[![Builds 76–100: Rothenburg through Wizard Academy](images/builds/collection-04.png)](images/builds/collection-04.png)
+
 Cell counts and assembly times at the default density:
 
 | Build | Cells | Assembly |
