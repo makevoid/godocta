@@ -96,9 +96,13 @@ Brush in uses **Auto** by default, so new cells copy the color of the cells they
 
 ## Gallery
 
-<img alt="Nine Octa builds: Eiffel Tower, Neuschwanstein, Golden Gate Bridge, Pirate Galleon, Floating Islands, Sydney Opera House, Saturn V Launch, Venice Grand Canal and Japanese Castle" src="https://github.com/user-attachments/assets/336b0e28-f52c-4106-8579-efc44a1a6c5f" width="100%" />
+<h2 align="center"><a href="docs/builds.md#collection">👉 SEE ALL BUILDS ➡️</a></h2>
 
-<sub>Eiffel Tower · Neuschwanstein · Golden Gate Bridge · Pirate Galleon · Floating Islands · Sydney Opera House · Saturn V Launch · Venice Grand Canal · Japanese Castle. [See all 85 →](docs/builds.md)</sub>
+<a href="docs/builds.md#collection" title="👉 SEE ALL BUILDS ➡️">
+<img alt="Nine Octa builds: Eiffel Tower, Neuschwanstein, Golden Gate Bridge, Pirate Galleon, Floating Islands, Sydney Opera House, Saturn V Launch, Venice Grand Canal and Japanese Castle" src="https://github.com/user-attachments/assets/336b0e28-f52c-4106-8579-efc44a1a6c5f" width="100%" />
+</a>
+
+<sub>Eiffel Tower · Neuschwanstein · Golden Gate Bridge · Pirate Galleon · Floating Islands · Sydney Opera House · Saturn V Launch · Venice Grand Canal · Japanese Castle.</sub>
 
 ## Documentation
 
