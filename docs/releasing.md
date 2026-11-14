@@ -17,7 +17,7 @@ built locally using Docker and published as GitHub Release assets.
    exported scene, gallery, Fable Balloon Festival, primitives, Save/Load and X-ray.
    Run the matching Godot editor with `--main-pack <exported.pck>` and
    `--script tools/release/smoke.gd`, followed by
-   `-- --expect-version=0.4.0` (substitute the release version). With a real renderer,
+   `-- --expect-version=0.4.1` (substitute the release version). With a real renderer,
    also pass `--capture=/absolute/path.png` to inspect the UI. Keep macOS captures
    hidden using `open -g -j`; Linux can use Xvfb and Mesa inside an amd64 container.
    Do not describe software-rendered or headless results as physical GPU/HiDPI testing.
@@ -29,21 +29,24 @@ built locally using Docker and published as GitHub Release assets.
 4. Verify the macOS app's universal architectures and ad-hoc signature with `file`
    and `codesign --verify --deep --strict`. It is not Apple-notarized. State this in
    the release notes and include the standard Privacy & Security opening guidance.
+   For icon changes, inspect `Contents/Resources/icon.icns` from the exported app
+   at Dock sizes; the macOS preset uses `assets/app-icon-macos.png`, while the
+   project uses `assets/app-icon.png` for its window icon.
 5. Commit the intended source changes, tag that commit, and push the branch and tag.
    Create a draft release, upload only the two archives and checksum file, inspect
    its assets, then publish it. The README buttons use stable asset names under
    `releases/latest/download/`, so every release should retain those names.
 
-For example, after checking the artifacts and writing `dist/0.4.0/release-notes.md`:
+For example, after checking the artifacts and writing `dist/0.4.1/release-notes.md`:
 
 ```sh
-git tag -a v0.4.0 -m "Octa 0.4.0"
-git push origin main v0.4.0
-gh release create v0.4.0 --verify-tag --draft --title "Octa 0.4.0" \
-  --notes-file dist/0.4.0/release-notes.md \
-  dist/0.4.0/Octa-macos.zip dist/0.4.0/Octa-linux-x86_64.tar.gz \
-  dist/0.4.0/SHA256SUMS.txt
-gh release edit v0.4.0 --draft=false --latest
+git tag -a v0.4.1 -m "Octa 0.4.1"
+git push origin main v0.4.1
+gh release create v0.4.1 --verify-tag --draft --title "Octa 0.4.1" \
+  --notes-file dist/0.4.1/release-notes.md \
+  dist/0.4.1/Octa-macos.zip dist/0.4.1/Octa-linux-x86_64.tar.gz \
+  dist/0.4.1/SHA256SUMS.txt
+gh release edit v0.4.1 --draft=false --latest
 ```
 
 Release archives include the project license, credits, controls, launch instructions,

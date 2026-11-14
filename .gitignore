@@ -16,9 +16,13 @@ preview/
 .fal_key
 export_credentials.cfg
 
-# Release output and local tooling caches.
-dist/
-build/
+# Release output and staging; hide them from Godot as well as Git.
+/dist/*
+!/dist/.gdignore
+/build/*
+!/build/.gdignore
+
+# Local tooling caches.
 __pycache__/
 *.pyc
 .venv/
