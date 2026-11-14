@@ -56,7 +56,7 @@ godot --headless --path . --script tests/test_scene.gd
 
 | Check | Coverage / expected result |
 | --- | --- |
-| [test_core.gd](../tests/test_core.gd) | Mesh topology/winding/volume, 14 shared faces, lattice/builder validation, deterministic presets and symmetry, timing, v1/v2 round trips and corrupt payloads, all 85 checked-in generated builds; prints `Core checks: N passed, 0 failed.` |
+| [test_core.gd](../tests/test_core.gd) | Mesh topology/winding/volume, 14 shared faces, lattice/builder validation, deterministic presets and symmetry, timing, v1/v2 round trips and corrupt payloads, all 100 checked-in generated builds; prints `Core checks: N passed, 0 failed.` |
 | [test_scene.gd](../tests/test_scene.gd) | Instantiates the actual scene, checks welcome/collection actions, search and overlay input isolation, selects presets via buttons, waits for assembly, checks buffers and surface reduction, rapid switching/replay, palette/X-ray, gallery/theme selection, camera and empty data; prints `Scene integration: PASS` |
 | [octa/structure_test.go](../gen/octa/structure_test.go) | Colored binary round trip, uncolored v1 output, invalid colors, truncated payload |
 | [scenes/scenes_test.go](../gen/scenes/scenes_test.go) | Compiles each registered scene at default density; validates count, bottom-up ordering and ≥3 colors |
@@ -248,7 +248,12 @@ For a new Go scene, follow the complete example in the [generator guide](../gen/
 `go test ./...` compiles recipes but does not rewrite `.octa` assets. Regenerate
 affected scenes explicitly at the default density, then run Godot core checks to
 exercise the other language's reader. Update cell counts in [builds](builds.md) if output
-changes. Use `-out /tmp/octa-builds` for experiments that should not replace assets.
+changes. Use `-out ../experiments/<name>/structures` from `gen/` for experiments
+that should not replace assets. Keep experiment-only recipes, prompts, scripts,
+comparisons, and results under `experiments/` too. Everything there except the
+`.gdignore` marker is gitignored, and Godot imports and exports exclude the directory.
+Promote accepted recipes and default-density assets into `gen/scenes/` and
+`structures/`; alternative versions stay local.
 
 For a new world, match the snake-cased embedded title in `WorldTheme.themes()`;
 filenames do not choose the theme. Reuse `_late_afternoon()` if appropriate and
@@ -270,7 +275,7 @@ python3 -m http.server 8000 --directory preview
 ```
 
 Open `http://localhost:8000` while the local server is running. The export includes
-`structures/*.octa` and excludes development tools, tests, docs, captures, export
+`structures/*.octa` and excludes development tools, tests, docs, captures, experiments, export
 output, artwork prompts/sidecars, and the unused button master. The templates and
 `preview/` output are ignored; do not commit them. Use the native application for
 local filesystem Save/Load. Native headless tests do not establish browser behavior;

@@ -157,3 +157,9 @@ Keep the docs linked above current when controls, commands, contracts, or public
 types change. `structures/*.octa` are versioned fixtures/assets; `.godot/`,
 `captures/`, and `preview/` are generated and ignored. `neighbors.octa` is a small
 15-cell format fixture, not a registered Go scene.
+
+Keep experiment-only recipes, builds, prompts, comparison scripts, and results in
+`experiments/`. Its contents are gitignored except for `.gdignore`, which keeps
+Godot from importing them; exports also exclude the directory. Promote accepted
+recipes into `gen/scenes/` and their default-density assets into `structures/`.
+Keep alternative versions local in `experiments/`, outside the packaged collection.

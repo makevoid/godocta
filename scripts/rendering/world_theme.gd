@@ -565,4 +565,105 @@ static func themes() -> Dictionary:
 			"silhouette": Color("566f5a"), "silhouette_height": 0.16, "silhouette_seed": 29.0, "haze": 0.6,
 			"ground": Color("3f5a30"), "mottle": 0.4, "azimuth": -35.0,
 		}),
+		# Salisbury Plain: open chalk downland under a wide sky, low rolling ridges.
+		"stonehenge": _late_afternoon({
+			"zenith": Color("6884aa"), "horizon": Color("ecd6ba"), "below": Color("b3b89a"),
+			"silhouette": Color("7c8c72"), "silhouette_height": 0.035, "silhouette_seed": 19.0, "haze": 0.5,
+			"ground": Color("4d6534"), "mottle": 0.3, "azimuth": -35.0,
+		}),
+		# Riverside meadow on a still, clear day; low wooded hills on the horizon.
+		"balloon_festival": _late_afternoon({
+			"zenith": Color("5f88b8"), "horizon": Color("f0d8ba"), "below": Color("b6ba9c"),
+			"clouds": 0.5,
+			"silhouette": Color("72866e"), "silhouette_height": 0.05, "silhouette_seed": 11.0, "haze": 0.45,
+			"ground": Color("4c6434"), "mottle": 0.3, "azimuth": -40.0,
+		}),
+		# Low Earth orbit: black sky with stars and a hard white sun; the Earth cap is the build.
+		"space_station": _late_afternoon({
+			"zenith": Color("03050b"), "horizon": Color("0b1426"), "below": Color("05080f"),
+			"glow": Color("9fc0ff"), "glow_strength": 0.15, "clouds": 0.0, "stars": 0.9,
+			"sun": Color("fff6ea"), "sun_energy": 0.85, "elevation": 30.0,
+			"ambient": Color("c4cfe4"), "ambient_energy": 0.75,
+			"ground": Color("05080f"), "lit": 0.2, "azimuth": -35.0,
+		}),
+		# Black Canyon: bare desert ranges in a hot, dusty haze.
+		"hoover_dam": _late_afternoon({
+			"zenith": Color("5f85b6"), "horizon": Color("f0d2aa"), "below": Color("b99a7c"),
+			"silhouette": Color("8e6450"), "silhouette_height": 0.07, "silhouette_seed": 31.0, "haze": 0.45,
+			"ground": Color("6f6052"), "mottle": 0.3, "azimuth": -35.0,
+		}),
+		# Lower Mississippi: wide brown-green river, a low hazy line of willows on the far bank.
+		"paddle_steamer": _late_afternoon({
+			"zenith": Color("6484ac"), "horizon": Color("efd4b2"), "below": Color("a3b4b0"),
+			"silhouette": Color("5f7458"), "silhouette_height": 0.03, "silhouette_seed": 13.0, "haze": 0.55,
+			"ground": Color("2a5866"), "water": 1.0, "water_level": 0.8, "azimuth": -35.0,
+		}),
+		# Old-growth forest glade: warm light through a distant wall of great trees.
+		"mushroom_forest": _late_afternoon({
+			"zenith": Color("6688ac"), "horizon": Color("ecd8b2"), "below": Color("a8b692"),
+			"silhouette": Color("4a6844"), "silhouette_height": 0.16, "silhouette_seed": 37.0, "haze": 0.55,
+			"ground": Color("3c5a2e"), "mottle": 0.4, "azimuth": -30.0,
+		}),
+		# Working harbor basin; the built sea plate runs on into the theme water, a hazy port skyline beyond.
+		"container_port": _late_afternoon({
+			"zenith": Color("5f7fab"), "horizon": Color("e8d2ba"), "below": Color("9fb2c0"),
+			"cloud_color": Color("dccabe"),
+			"silhouette": Color("667088"), "silhouette_height": 0.035, "silhouette_city": 1.0, "silhouette_seed": 33.0, "haze": 0.45,
+			"ground": Color("1f4a60"), "water": 1.0, "water_level": 0.6, "azimuth": -40.0,
+		}),
+		# High desert plateau under a clear, dry sky; red mesas far on the horizon.
+		"radio_observatory": _late_afternoon({
+			"zenith": Color("5682ba"), "horizon": Color("f0d2a8"), "below": Color("c69c76"),
+			"clouds": 0.5,
+			"silhouette": Color("a8664a"), "silhouette_height": 0.05, "silhouette_seed": 41.0, "haze": 0.4,
+			"ground": Color("a88c68"), "mottle": 0.25, "azimuth": -40.0,
+		}),
+		# Marina Bay in tropical haze; the built bay runs on into the theme water, Singapore's skyline beyond.
+		"marina_bay_sands": _late_afternoon({
+			"zenith": Color("5f84b0"), "horizon": Color("efd4b6"), "below": Color("a2b8c4"),
+			"cloud_scale": 1.2, "city_lights": 0.2,
+			"silhouette": Color("68728a"), "silhouette_height": 0.045, "silhouette_city": 1.0, "silhouette_seed": 15.0, "haze": 0.5,
+			"ground": Color("1e5670"), "water": 1.0, "water_level": 0.9, "azimuth": -40.0,
+		}),
+		# High Valais valley on a clear day: snowy blue ranges all round the meadow.
+		"alpine_village": _late_afternoon({
+			"zenith": Color("5a80b2"), "horizon": Color("e8d8c6"), "below": Color("aab49e"),
+			"clouds": 0.55, "cloud_color": Color("ece2da"),
+			"silhouette": Color("7486a6"), "silhouette_height": 0.2, "silhouette_seed": 39.0, "haze": 0.45,
+			"ground": Color("46602f"), "mottle": 0.35, "azimuth": -35.0,
+		}),
+		# Babylon in golden haze: flat Mesopotamian river plain, low tan horizon of walls and date groves.
+		"hanging_gardens": _late_afternoon({
+			"zenith": Color("6686b0"), "horizon": Color("f1d2a4"), "below": Color("c8ab80"),
+			"silhouette": Color("a5845e"), "silhouette_height": 0.035, "silhouette_seed": 45.0, "haze": 0.55,
+			"ground": Color("a48c68"), "mottle": 0.3, "azimuth": -30.0,
+		}),
+		# Match day on the edge of town: parkland around the ground, a hazy city skyline beyond.
+		"football_stadium": _late_afternoon({
+			"zenith": Color("6484ae"), "horizon": Color("ecd4b6"), "below": Color("b0b29c"),
+			"silhouette": Color("70788c"), "silhouette_height": 0.04, "silhouette_city": 1.0, "silhouette_seed": 25.0, "haze": 0.45,
+			"city_lights": 0.2,
+			"ground": Color("4a6034"), "mottle": 0.3, "azimuth": -40.0,
+		}),
+		# The Troad coast: pale Aegean running on from the built shore, dusty hills in the haze.
+		"trojan_horse": _late_afternoon({
+			"zenith": Color("5f82b0"), "horizon": Color("f0d4ae"), "below": Color("a6bcc6"),
+			"silhouette": Color("94886c"), "silhouette_height": 0.05, "silhouette_seed": 27.0, "haze": 0.5,
+			"ground": Color("1d5873"), "water": 1.0, "water_level": 0.8, "azimuth": -35.0,
+		}),
+		# Smoky dusk over dark moorland hills; the heath runs on into the theme ground.
+		"dragon_rock": _late_afternoon({
+			"zenith": Color("4f5d80"), "horizon": Color("dcb294"), "below": Color("8f9486"),
+			"clouds": 0.85, "cloud_color": Color("cdb6ae"),
+			"silhouette": Color("4c5668"), "silhouette_height": 0.1, "silhouette_seed": 33.0, "haze": 0.55,
+			"ground": Color("3c5230"), "mottle": 0.35, "azimuth": -35.0,
+		}),
+		# Under the sea: blue water all round, a pale seabed, light falling from the surface above.
+		"coral_reef_wreck": _late_afternoon({
+			"zenith": Color("3f9cc0"), "horizon": Color("1f6f94"), "below": Color("1b5c7c"),
+			"glow": Color("bfe8f0"), "glow_strength": 0.3, "clouds": 0.0, "sun_strength": 0.4,
+			"sun": Color("e6f6ff"), "sun_energy": 0.7, "elevation": 50.0,
+			"ambient": Color("c6e4ee"), "ambient_energy": 1.0,
+			"ground": Color("4d5a52"), "mottle": 0.3, "azimuth": -35.0,
+		}),
 	}

@@ -34,7 +34,7 @@ is not part of release preparation.
   exposed credential before history cleanup. Git author names/emails and historical
   paths are also visible when publishing history.
 - [x] Run `python3 tools/check.py` from a fresh checkout or source archive. Confirm
-  all 85 builds and `neighbors.octa` are present, without relying on local imports.
+  all 100 builds and `neighbors.octa` are present, without relying on local imports.
 - [ ] Review the current README and [controls](controls.md) in the actual desktop app. At minimum,
   exercise opening/saving a file, switching builds, brush/erase, undo/redo, and X-ray.
 - [x] Enable GitHub private vulnerability reporting so the channel in `SECURITY.md`

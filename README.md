@@ -10,7 +10,7 @@ Build, paint and explore structures made of truncated octahedrons, the 14-faced 
 [![MIT license](https://img.shields.io/badge/license-MIT-2bd4c4?style=flat-square)](LICENSE)
 [![Godot 4.4+](https://img.shields.io/badge/Godot-4.4%2B-478cbf?style=flat-square&logo=godotengine&logoColor=white)](https://godotengine.org)
 [![Go 1.22+](https://img.shields.io/badge/Go-1.22%2B-00add8?style=flat-square&logo=go&logoColor=white)](gen/README.md)
-[![85 builds](https://img.shields.io/badge/builds-85-e0a040?style=flat-square)](docs/builds.md)
+[![100 builds](https://img.shields.io/badge/builds-100-e0a040?style=flat-square)](docs/builds.md)
 
 [Quick start](#quick-start) · [Using the studio](#using-the-studio) · [Gallery](#gallery) · [Docs](#documentation)
 
@@ -22,7 +22,7 @@ https://github.com/user-attachments/assets/954155b8-4db1-4b37-abe7-11697d8fbf5e
 
 ## Highlights
 
-- 🏰 **85 builds**: landmarks, old towns, ships, machines and fantasy worlds, mostly 80,000 to 130,000 cells each. Every build assembles from the bottom up in its own sky, ground or water.
+- 🏰 **100 builds**: landmarks, old towns, ships, machines and fantasy worlds, mostly 80,000 to 130,000 cells each. Every build assembles from the bottom up in its own sky, ground or water.
 - 🖌️ **Brush in** new cells in any palette color, or swallow them with a **black hole**.
 - ↩️ **Undo and redo** the last ten strokes.
 - 🔍 **X-ray** view to see inside any build.

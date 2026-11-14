@@ -635,4 +635,47 @@ Built in round 16:
 | `caravanserai` | 96,852 | Tiled pishtaq gate, two-storey arcaded courtyard with pool pavilion, camel caravan, palms, wind-catcher cistern |
 | `lalibela` | 120,149 | Cross-shaped rock church in a deep tuff pit, hermit caves, second pit church, tukuls; busy plateau speckle |
 
-All 80 new builds are generated, integrated and passing (85 registered with the five originals).
+### Round 17
+
+A round of fifteen, chosen for variety of subject and all built: several pick up
+ideas left over from earlier rounds.
+
+| # | Idea | Notes |
+| ---: | --- | --- |
+| 321 | Stonehenge | Sarsen circle and trilithons on Salisbury Plain (idea 94) |
+| 322 | Balloon Festival | Mass ascent of patterned hot-air balloons (idea 41) |
+| 323 | Space Station | ISS-style station above the curve of the Earth (idea 34) |
+| 324 | Hanging Gardens | Terraced Babylonian gardens (idea 306) |
+| 325 | Trojan Horse | The wooden horse before the walls of Troy (idea 155) |
+| 326 | Hoover Dam | Arch-gravity dam in Black Canyon (idea 320) |
+| 327 | Football Stadium | Two-tier bowl with a cantilever roof and a striped pitch (idea 58) |
+| 328 | Paddle Steamer | Mississippi sternwheeler at a levee landing (idea 314) |
+| 329 | Alpine Village | Chalet village under a Matterhorn-like horn (idea 310) |
+| 330 | Mushroom Forest | Giant fungi with tiny houses (idea 316) |
+| 331 | Dragon Rock | Dragon coiled round a crag above a burning village (idea 65) |
+| 332 | Container Port | Container terminal with a ship under gantry cranes (idea 122) |
+| 333 | Radio Observatory | Steerable dish and interferometer array in the desert |
+| 334 | Coral Reef Wreck | Sunken galleon on a coral reef with sea life (idea 299) |
+| 335 | Marina Bay Sands | Singapore's three towers under the SkyPark |
+
+Built in round 17:
+
+| Build | Cells | Review |
+| --- | ---: | --- |
+| `stonehenge` | 93,800 | Sarsen circle with lintels, trilithon horseshoe, bluestones, Heel Stone and Avenue, ditch, visitors, sheep; low profile, so the front and side views are thin |
+| `balloon_festival` | 105,955 | Nine patterned hot-air balloons from inflating to aloft, striped launch field, river, marquees, chase vans; the six balloons aloft float unattached by design |
+| `space_station` | 109,343 | Truss with eight gold-gridded solar wings, module spine, radiators, robot arm, spacewalkers over an Earth cap; the station floats above the cap; starry space theme |
+| `hanging_gardens` | 111,346 | Arcaded garden terraces with vines, cascades, grand stair, water-lifting tower, glazed gate, Euphrates quay; trees screen the upper arcades from the hero view |
+| `trojan_horse` | 110,144 | Hollow plank horse on a wheeled platform hauled to Troy's Scaean Gate, Greek camp, olives, black ships; haulers and camp props are small, and the gate is seen obliquely |
+| `hoover_dam` | 124,039 | White arch dam in banded canyon rock, Lake Mead with intake towers, powerhouse, valve jets, bypass arch bridge; heaviest of the round; the side view is one canyon wall |
+| `football_stadium` | 97,506 | Two-tier horseshoe bowl with OCTA FC seat lettering, truss roof, striped pitch, floodlights, plaza, car park; scoreboard digits garble at a distance |
+| `paddle_steamer` | 95,985 | White sternwheeler with three gallery decks, twin crowned stacks and smoke, red wheel, levee warehouse; the landing stages and booms tangle at the bow |
+| `alpine_village` | 104,705 | Hooked snow horn over a chalet village: white church, glacier brook, stone bridge, lake, red cable car; bridge and pylons are small among the roofs |
+| `mushroom_forest` | 109,024 | Giant fly agaric home with spiral stair, parasol on a rope bridge, bolete cottage, bell caps, brook, snail; small props crowd the brook |
+| `dragon_rock` | 101,178 | Red dragon coiled round a basalt crag and its shattered tower, wings spread, torching the heath below; the tower is squat and half hidden by the forelegs |
+| `container_port` | 114,222 | Navy box ship under four red gantry cranes, yard stacks with yellow gantries, rail siding, tug, pilot boat; the cranes overlap one another in the hero view |
+| `radio_observatory` | 111,273 | Tilted 64-unit dish on A-frame towers and rail ring, five-dish array, control building, dome, desert plateau; the rib trusses behind the dish only read from the side |
+| `coral_reef_wreck` | 100,899 | Broken galleon on a sandy seabed: coral ridge, kelp, treasure, diver and sub, shark, manta, fish schools; the side view is bow-on and the diver is small beside the submersible |
+| `marina_bay_sands` | 110,452 | Three splayed glass towers under the ship-shaped SkyPark, lotus museum, Helix bridge, Supertrees, bumboats; the Helix bridge and podium are small beside the towers |
+
+All 95 new builds are generated, integrated and passing (100 registered with the five originals).

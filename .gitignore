@@ -4,6 +4,10 @@
 captures/
 preview/
 
+# Local experiments; keep only the marker that hides them from Godot.
+/experiments/*
+!/experiments/.gdignore
+
 # Local credentials and Godot export signing settings.
 .env
 .env.*
