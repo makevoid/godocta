@@ -1,0 +1,43 @@
+{
+  "name": "download-buttons",
+  "request_id": "01a1d81a-d841-7f81-9225-c0c48d4d2431",
+  "elapsed_seconds": 57.59,
+  "prompt": {
+    "purpose": "Two finished download button assets for the Octa Structure Studio GitHub README. A 1536 by 1024 contact sheet, exactly two wide horizontal buttons stacked vertically, easy to crop into two separate images.",
+    "subject": "At the left of each button, a small elegant cluster of three truncated octahedron cells in pale aqua, teal and warm gold, joined as a dimensional geometric emblem. At the far right of each button, a crisp simple white download arrow pointing into a tray. Leave enough space around the type.",
+    "layout": "The upper button is centered at (768, 256), 1376 pixels wide and 320 pixels high. The lower button is centered at (768, 768), with identical size and shape. Keep all decoration inside each button. Flat pure magenta #FF00FF everywhere outside the buttons, with generous completely empty gutters. No shadows or glow outside the buttons.",
+    "style": "Premium tactile desktop software controls, clean and readable at a small size. Rounded rectangular dark midnight navy enamel body, gently beveled metallic edge, fine luminous teal rim. Subtle cyan glass highlight across the top face. Refined, restrained detail. The same design and typography for both buttons.",
+    "palette": "Midnight navy #071D31, deep teal #104B58, bright aqua #4FE1D4, white #F6FBFF, small warm gold #F4B765 accents. Pure magenta is reserved exclusively for the background.",
+    "text": "Upper button: \"Download for macOS\" appearing exactly once, in large crisp bold white sans-serif lettering. Under it, smaller muted pale cyan text \"Apple silicon + Intel\" appearing exactly once. Lower button: \"Download for Linux\" appearing exactly once in the same large lettering. Under it, smaller muted pale cyan text \"64-bit \u00b7 x86_64\" appearing exactly once. Spell all labels precisely. Text must dominate, with strong readability at 360 pixels wide.",
+    "camera": "Flat front view of the buttons with only the tiny geometric emblems rendered in isometric perspective. Both buttons must have identical geometry, consistent margins and equal weight.",
+    "technical": "Opaque PNG, sharp edges, precise text, no blur, no background texture. All non-magenta content must be contained within the two specified button rectangles. No outer shadow.",
+    "exclude": "No website mockup, no cursor, no platform logos, no extra buttons, no headings, no watermark, no signature, no words beyond the four quoted labels, no decoration outside the buttons, no perspective distortion of the button bodies."
+  },
+  "prompt_text": "PURPOSE: Two finished download button assets for the Octa Structure Studio GitHub README. A 1536 by 1024 contact sheet, exactly two wide horizontal buttons stacked vertically, easy to crop into two separate images.\nSUBJECT: At the left of each button, a small elegant cluster of three truncated octahedron cells in pale aqua, teal and warm gold, joined as a dimensional geometric emblem. At the far right of each button, a crisp simple white download arrow pointing into a tray. Leave enough space around the type.\nLAYOUT: The upper button is centered at (768, 256), 1376 pixels wide and 320 pixels high. The lower button is centered at (768, 768), with identical size and shape. Keep all decoration inside each button. Flat pure magenta #FF00FF everywhere outside the buttons, with generous completely empty gutters. No shadows or glow outside the buttons.\nSTYLE: Premium tactile desktop software controls, clean and readable at a small size. Rounded rectangular dark midnight navy enamel body, gently beveled metallic edge, fine luminous teal rim. Subtle cyan glass highlight across the top face. Refined, restrained detail. The same design and typography for both buttons.\nPALETTE: Midnight navy #071D31, deep teal #104B58, bright aqua #4FE1D4, white #F6FBFF, small warm gold #F4B765 accents. Pure magenta is reserved exclusively for the background.\nTEXT: Upper button: \"Download for macOS\" appearing exactly once, in large crisp bold white sans-serif lettering. Under it, smaller muted pale cyan text \"Apple silicon + Intel\" appearing exactly once. Lower button: \"Download for Linux\" appearing exactly once in the same large lettering. Under it, smaller muted pale cyan text \"64-bit \u00b7 x86_64\" appearing exactly once. Spell all labels precisely. Text must dominate, with strong readability at 360 pixels wide.\nCAMERA/FRAME: Flat front view of the buttons with only the tiny geometric emblems rendered in isometric perspective. Both buttons must have identical geometry, consistent margins and equal weight.\nTECHNICAL: Opaque PNG, sharp edges, precise text, no blur, no background texture. All non-magenta content must be contained within the two specified button rectangles. No outer shadow.\nEXCLUDE: No website mockup, no cursor, no platform logos, no extra buttons, no headings, no watermark, no signature, no words beyond the four quoted labels, no decoration outside the buttons, no perspective distortion of the button bodies.",
+  "input": {
+    "image_size": {
+      "width": 1536,
+      "height": 1024
+    },
+    "quality": "xhigh",
+    "background": "opaque",
+    "output_format": "png",
+    "num_images": 1,
+    "sync_mode": false
+  },
+  "images": [
+    {
+      "url": "https://v3b.fal.media/files/b/0ab2622c/iNRrOISKhXNkPERlkPGEF_kTkz1vd4.png",
+      "content_type": "image/png",
+      "file_name": "iNRrOISKhXNkPERlkPGEF_kTkz1vd4.png",
+      "path": "experiments/release-artwork/download-buttons.png"
+    }
+  ],
+  "model": "openai/gpt-image-2.6/sunburst/text-to-image",
+  "source_sha256": "bbc64cc1cba810c58d3ea6f483c29a63c01839be81880004c05218ea95dd94b5",
+  "derivatives": [
+    "docs/images/download-macos.png",
+    "docs/images/download-linux.png"
+  ],
+  "processing": "Split into top/bottom halves; remove magenta pixels (r>g+0.04 and b>g+0.04, normalized channels); trim; add 8px transparent border; resize to 720px width."
+}

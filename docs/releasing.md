@@ -1,9 +1,54 @@
 # Open-source release readiness
 
-This repository is prepared for a source release under MIT. Publishing the GitHub
-repository, creating tags/releases, and shipping desktop binaries are separate
-maintainer actions. GitHub Actions is intentionally disabled to avoid starting
-hosted jobs before the maintainer has set up a budget.
+Octa ships source under MIT and desktop downloads for macOS universal and Linux
+x86-64. The application version lives in `project.godot`; release tags use `v` plus
+that version. GitHub Actions remains intentionally disabled. Desktop packages are
+built locally using Docker and published as GitHub Release assets.
+
+## Desktop release procedure
+
+1. Update `config/version` in `project.godot` and prepare release notes.
+2. Start Docker and run `python3 tools/release.py`. The Dockerfile in
+   `tools/release/` supports arm64 and amd64 hosts, downloads the official Godot
+   4.7.2 editor and export templates, and verifies their pinned SHA-512 hashes.
+   It runs Godot tests, verifies the exported build list and bytes, and creates
+   `dist/<version>/Octa-macos.zip`, `Octa-linux-x86_64.tar.gz`, and `SHA256SUMS.txt`.
+3. Extract and smoke-test both packages. `tools/release/smoke.gd` exercises the
+   exported scene, gallery, Fable Balloon Festival, primitives, Save/Load and X-ray.
+   Run the matching Godot editor with `--main-pack <exported.pck>` and
+   `--script tools/release/smoke.gd`, followed by
+   `-- --expect-version=0.4.0` (substitute the release version). With a real renderer,
+   also pass `--capture=/absolute/path.png` to inspect the UI. Keep macOS captures
+   hidden using `open -g -j`; Linux can use Xvfb and Mesa inside an amd64 container.
+   Do not describe software-rendered or headless results as physical GPU/HiDPI testing.
+   Official release templates disable external script overrides, so also launch the
+   actual exported executables with `--quit-after` to verify standalone startup.
+   On Apple silicon, x86-64 Mesa under QEMU can fail in LLVM or time out. In that
+   case, run the packaged-content check with the native Linux editor and verify
+   the x86-64 executable headlessly; report native x86-64 GPU testing as outstanding.
+4. Verify the macOS app's universal architectures and ad-hoc signature with `file`
+   and `codesign --verify --deep --strict`. It is not Apple-notarized. State this in
+   the release notes and include the standard Privacy & Security opening guidance.
+5. Commit the intended source changes, tag that commit, and push the branch and tag.
+   Create a draft release, upload only the two archives and checksum file, inspect
+   its assets, then publish it. The README buttons use stable asset names under
+   `releases/latest/download/`, so every release should retain those names.
+
+For example, after checking the artifacts and writing `dist/0.4.0/release-notes.md`:
+
+```sh
+git tag -a v0.4.0 -m "Octa 0.4.0"
+git push origin main v0.4.0
+gh release create v0.4.0 --verify-tag --draft --title "Octa 0.4.0" \
+  --notes-file dist/0.4.0/release-notes.md \
+  dist/0.4.0/Octa-macos.zip dist/0.4.0/Octa-linux-x86_64.tar.gz \
+  dist/0.4.0/SHA256SUMS.txt
+gh release edit v0.4.0 --draft=false --latest
+```
+
+Release archives include the project license, credits, controls, launch instructions,
+and the matching upstream Godot license and third-party notices. Experiment files
+stay local under `experiments/`; captures, caches and development tools are excluded.
 
 ## Review findings
 
@@ -69,8 +114,8 @@ Neither template has been executed on hosted runners during this preparation.
 ## Before shipping binaries or a web preview
 
 1. Use official export templates matching the Godot version used to validate the
-   release. The checked-in preset covers the experimental web preview; desktop
-   exports still need platform presets and testing.
+   release. The checked-in presets cover macOS universal, Linux x86-64 and the
+   experimental web preview.
 2. Include `LICENSE`, asset credits, and the required notices for Godot and its
    bundled components. See [Godot's license guidance](https://docs.godotengine.org/en/stable/about/complying_with_licenses.html).
 3. Test exports on each advertised platform, including Save/Load and HiDPI UI.

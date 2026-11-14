@@ -35,6 +35,7 @@ Run from the repository root unless stated otherwise. The project declares Godot
 ```sh
 bin/run        # launches the app (foreground window): ask the user to run it
 python3 tools/check.py  # import + Godot suites + Go format/vet/tests (Python 3.9+)
+python3 tools/release.py  # Docker: validate and package desktop builds into dist/<version>/
 
 # Refresh imports/global class registration, especially after adding or renaming scripts.
 godot --headless --path . --editor --import --quit

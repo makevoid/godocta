@@ -1,5 +1,10 @@
 <div align="center">
 
+<a href="https://github.com/makevoid/godocta/releases/latest/download/Octa-macos.zip"><img src="docs/images/download-macos.png" alt="Download Octa for macOS — Apple silicon and Intel" width="340" /></a>
+<a href="https://github.com/makevoid/godocta/releases/latest/download/Octa-linux-x86_64.tar.gz"><img src="docs/images/download-linux.png" alt="Download Octa for Linux x86-64" width="340" /></a>
+
+[Release notes and checksums](https://github.com/makevoid/godocta/releases/latest)
+
 <img alt="The Octa welcome screen: Small blocks. Infinite worlds." src="https://github.com/user-attachments/assets/4bbbf557-c19a-4cba-822e-2ee44bce2dc2" width="100%" />
 
 # Octa · Structure Studio
@@ -31,7 +36,18 @@ https://github.com/user-attachments/assets/954155b8-4db1-4b37-abe7-11697d8fbf5e
 
 ## Quick start
 
-Install [Godot 4.4 or newer](https://godotengine.org/download) (tested with 4.7.2), then:
+Download a desktop build using the buttons above. All 100 builds are included;
+you do not need to install Godot or Go.
+
+- **macOS:** unzip and move the app to Applications. It supports Apple silicon and
+  Intel Macs. The app is ad-hoc signed, without Apple notarization; if macOS blocks
+  it, use **System Settings → Privacy & Security → Open Anyway** after attempting
+  to open this trusted download.
+- **Linux x86-64:** extract the archive and run `./Octa.x86_64`. Keep `Octa.pck`
+  beside the executable. An OpenGL 3.3-capable graphics driver is required.
+
+To run from source instead, install
+[Godot 4.4 or newer](https://godotengine.org/download) (tested with 4.7.2), then:
 
 ```sh
 git clone https://github.com/makevoid/godocta.git
@@ -121,7 +137,10 @@ Brush in uses **Auto** by default, so new cells copy the color of the cells they
 
 Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md), and run `python3 tools/check.py` before opening a pull request. Report bugs in [issues](https://github.com/makevoid/godocta/issues), and report vulnerabilities as described in [SECURITY.md](SECURITY.md).
 
-The desktop app has been tested on macOS. Windows and Linux are untested, and the web export is an experimental preview.
+Desktop downloads are available for macOS and Linux x86-64. Linux release checks
+use Docker and Mesa software rendering; behavior on physical Linux GPUs and HiDPI
+displays still needs wider testing. Windows is untested, and the web export is an
+experimental preview.
 
 ## License
 

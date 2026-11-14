@@ -12,6 +12,7 @@ Third-party tools retain their own licenses.
 | `assets/*.svg`, `assets/ui/icons/*.svg` | Vector icons stored as editable SVG source in this repository |
 | `assets/ui/splash.png`, `assets/ui/button-chrome.png` | AI-generated using Sunburst on fal.ai; prompts and generation settings are retained in `assets/ui/prompts/` and JSON sidecars |
 | `assets/ui/button-chrome-runtime.png` | Resized derivative of `button-chrome.png` for the nine-slice button skin |
+| `docs/images/download-macos.png`, `docs/images/download-linux.png` | Generated with [GPT Image 2.6 Sunburst on fal.ai](https://fal.ai/models/openai/gpt-image-2.6/sunburst/text-to-image); cropped, keyed and resized locally. Prompt and generation metadata are in `docs/images/download-buttons.prompt.txt` and `docs/images/download-buttons.json` |
 | `.agents/skills/sunburst-images/` | Optional Ruby artwork tooling and prompt reference material, authored by the maintainer (makevoid) |
 
 The artwork is included in the checkout; running Octa does not contact the image
@@ -34,6 +35,9 @@ they hold redistribution rights for the AI-generated UI artwork and authored the
 - **Ruby and Excon:** used only by the optional artwork tool; installed separately.
 - **FFmpeg:** optional external executable for showcase video generation; not
   included in the repository or required for PNG previews.
+- **Docker:** optional desktop release tooling. `tools/release.py` builds both
+  desktop packages from official, checksum-verified Godot 4.7.2 exports. Release
+  archives include Godot's matching `LICENSE.txt` and `COPYRIGHT.txt` notices.
 
 For new assets, record the author/source, license, modifications, and any required
 attribution here. Preserve upstream license files if third-party code is vendored.

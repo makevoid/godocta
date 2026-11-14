@@ -261,6 +261,21 @@ provide all required fields listed in the [architecture reference](architecture.
 Any new theme parameter must also be wired through `StudioEnvironment.apply_theme()`
 and its target shader. Unknown titles continue to use studio lighting.
 
+## Desktop release builds
+
+Set `config/version` in `project.godot`, start Docker, then run:
+
+```sh
+python3 tools/release.py
+```
+
+This builds the Linux container locally, verifies the official Godot 4.7.2 downloads,
+runs the Godot suites in an isolated copy, and exports macOS universal and Linux
+x86-64 packages to `dist/<version>/`. The source allowlist excludes local experiments
+and credentials. Each archive includes licenses, credits and launch instructions;
+`SHA256SUMS.txt` covers both downloads. The script does not commit, tag or publish.
+See [Releasing](releasing.md) for artifact checks and publication commands.
+
 ## Optional Web Preview export
 
 `export_presets.cfg` includes an experimental Web Preview preset with thread support
